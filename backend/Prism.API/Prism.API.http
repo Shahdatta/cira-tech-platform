@@ -1,0 +1,6 @@
+@Prism.API_HostAddress = http://localhost:5149
+
+GET {{Prism.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

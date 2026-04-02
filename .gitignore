@@ -1,0 +1,31 @@
+# =========================
+# .NET Backend
+# =========================
+backend/.vs/
+backend/**/bin/
+backend/**/obj/
+backend/**/*.user
+backend/**/*.suo
+backend/**/.idea/
+backend/**/appsettings.Development.json
+
+# =========================
+# Node.js / React Frontend
+# =========================
+prism-sync-forge/node_modules/
+prism-sync-forge/dist/
+prism-sync-forge/build/
+prism-sync-forge/.env
+prism-sync-forge/.env.local
+prism-sync-forge/.env.production
+
+# =========================
+# OS & IDE
+# =========================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.log

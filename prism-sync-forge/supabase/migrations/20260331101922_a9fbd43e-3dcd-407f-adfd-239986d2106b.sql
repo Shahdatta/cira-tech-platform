@@ -1,0 +1,1 @@
+ALTER TABLE messages DROP CONSTRAINT messages_sender_id_fkey;

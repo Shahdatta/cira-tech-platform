@@ -1,0 +1,1 @@
+ALTER TABLE performance_appraisals DROP CONSTRAINT performance_appraisals_evaluator_id_fkey;
