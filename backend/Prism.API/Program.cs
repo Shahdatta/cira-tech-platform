@@ -8,9 +8,9 @@ using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Database Configuration (InMemory for development)
+// 1. Database Configuration (PostgreSQL via Supabase)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseInMemoryDatabase("PrismDevDb"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // 2. Authentication (JWT)
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -71,6 +71,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await context.Database.EnsureCreatedAsync();
     await DbSeeder.SeedAsync(context);
 }
 
