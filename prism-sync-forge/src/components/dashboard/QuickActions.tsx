@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useRole } from "@/contexts/RoleContext";
 
 interface QuickAction {
   label: string;
@@ -19,12 +19,13 @@ const actions: QuickAction[] = [
 
 export function QuickActions() {
   const navigate = useNavigate();
-  const { getCurrentUser } = useAuth();
-  const user = getCurrentUser();
-  const role = user?.role || "Member";
+  const { role } = useRole(); // lowercase: "admin" | "pm" | "hr" | "member" | "guest"
 
   const visibleActions = actions.filter((action) => {
-    if (role === "Member" && (action.label === "New Task" || action.label === "Send Invoice")) return false;
+    if (action.label === "New Task") return role === "admin" || role === "pm";
+    if (action.label === "Send Invoice") return role === "admin" || role === "pm";
+    if (action.label === "Log Time") return role !== "guest";
+    if (action.label === "Team Chat") return role !== "guest";
     return true;
   });
 

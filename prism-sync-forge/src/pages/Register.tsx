@@ -54,36 +54,68 @@ const Register = () => {
   };
 
   return (
-    <div className="login-page">
-      {/* Animated background */}
-      <div className="auth-bg">
-        <div className="auth-orb auth-orb-1" />
-        <div className="auth-orb auth-orb-2" />
-        <div className="auth-orb auth-orb-3" />
+    <div className="auth-split-root">
+      {/* ── Left panel (same brand panel as Login) ── */}
+      <div className="auth-split-left">
+        <div className="auth-bg">
+          <div className="auth-orb auth-orb-1" />
+          <div className="auth-orb auth-orb-2" />
+          <div className="auth-orb auth-orb-3" />
+        </div>
+        <div className="auth-left-inner">
+          <div className="auth-left-logo">
+            <div className="auth-logo-box">
+              <svg width="32" height="32" viewBox="0 0 44 44" fill="none">
+                <path d="M12 22L18 16L24 22L18 28Z" fill="white" fillOpacity="0.95" />
+                <path d="M20 22L26 16L32 22L26 28Z" fill="white" fillOpacity="0.6" />
+              </svg>
+            </div>
+            <span className="auth-left-wordmark">CIRA PM</span>
+          </div>
+          <div className="auth-left-headline">
+            <h2 className="auth-left-h2">Build your team.<br />Ship faster.</h2>
+            <p className="auth-left-lead">
+              Join your organization's workspace and get full access to projects,
+              tasks, HR workflows, real-time chat and advanced reporting.
+            </p>
+          </div>
+          <div className="auth-stats-row">
+            <div className="auth-stat"><span className="auth-stat-val">5</span><span className="auth-stat-label">Roles</span></div>
+            <div className="auth-stat"><span className="auth-stat-val">12+</span><span className="auth-stat-label">Modules</span></div>
+            <div className="auth-stat"><span className="auth-stat-val">100%</span><span className="auth-stat-label">Real-time</span></div>
+          </div>
+          <div className="auth-feature-list" style={{ marginTop: "auto", paddingTop: "2rem", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            {["Kanban boards with approval workflows", "Slack-style project chat rooms", "HR Hub with contracts & payroll", "Live time tracking & invoicing", "Role-based dashboards & reports"].map(item => (
+              <div key={item} className="auth-feature-item">
+                <div className="auth-feature-icon">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 4.5" stroke="#2dd4a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <p className="auth-feature-title">{item}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="auth-container">
-        {/* Brand */}
-        <div className="auth-brand">
-          <div className="auth-logo">
-            <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-              <rect width="44" height="44" rx="12" fill="url(#logo-grad-r)" />
-              <path d="M12 22L18 16L24 22L18 28Z" fill="white" fillOpacity="0.9" />
-              <path d="M20 22L26 16L32 22L26 28Z" fill="white" fillOpacity="0.6" />
-              <defs>
-                <linearGradient id="logo-grad-r" x1="0" y1="0" x2="44" y2="44">
-                  <stop stopColor="#2dd4a8" />
-                  <stop offset="1" stopColor="#14b8a6" />
-                </linearGradient>
-              </defs>
-            </svg>
+      {/* ── Right panel ── */}
+      <div className="auth-split-right">
+        <div className="auth-right-inner">
+          <div className="auth-mobile-logo">
+            <div className="auth-logo-box auth-logo-box-sm">
+              <svg width="22" height="22" viewBox="0 0 44 44" fill="none">
+                <path d="M12 22L18 16L24 22L18 28Z" fill="white" fillOpacity="0.95" />
+                <path d="M20 22L26 16L32 22L26 28Z" fill="white" fillOpacity="0.6" />
+              </svg>
+            </div>
+            <span className="auth-left-wordmark">CIRA PM</span>
           </div>
-          <h1 className="auth-title">Create Account</h1>
-          <p className="auth-subtitle">Join your team on Prism Sync</p>
-        </div>
 
-        {/* Form Card */}
-        <form onSubmit={handleSubmit} className="auth-card">
+          <div className="auth-right-header">
+            <h1 className="auth-right-title">Create account</h1>
+            <p className="auth-right-subtitle">Join your team's workspace today</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="auth-form">
           <div className="auth-field">
             <Label htmlFor="register-name" className="auth-label">Full Name</Label>
             <div className="auth-input-wrap">
@@ -181,7 +213,8 @@ const Register = () => {
           </p>
         </form>
 
-        <p className="auth-copyright">© 2026 CIRA Tech. All rights reserved.</p>
+          <p className="auth-copyright">© 2026 CIRA Tech. All rights reserved.</p>
+        </div>
       </div>
     </div>
   );

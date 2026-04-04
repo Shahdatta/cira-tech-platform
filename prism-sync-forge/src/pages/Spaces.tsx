@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useNavigate } from "react-router-dom";
+import { useRole } from "@/contexts/RoleContext";
 import { FolderKanban, Plus, MoreHorizontal, Users, Edit, Trash, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,8 @@ const spaceColors = [
 const Spaces = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { role } = useRole();
+  const canManage = role === "admin" || role === "pm";
   const [editingSpace, setEditingSpace] = useState<any | null>(null);
 
   const form = useForm<EditProjectValues>({
@@ -86,24 +89,20 @@ const Spaces = () => {
     queryFn: () => api.get<any[]>("/projects"),
   });
 
-  const { data: tasks = [] } = useQuery({
-    queryKey: ["tasks_for_spaces"],
-    queryFn: () => api.get<any[]>("/tasks"),
-  });
-
-  function getSpaceStats(spaceId: string) {
-    const spaceTasks = tasks.filter((t: any) => t.list_id && t.status);
-    const done = spaceTasks.filter((t) => t.status === "Done").length;
-    const progress = spaceTasks.length > 0 ? Math.round((done / spaceTasks.length) * 100) : 0;
-    return { total: spaceTasks.length, progress };
+  function getSpaceStats(space: any) {
+    return {
+      total: space.task_count ?? 0,
+      progress: space.completion_percent ?? 0,
+    };
   }
+
 
   return (
     <AppLayout title="Project Spaces" subtitle="Manage all your project workspaces">
       <div className="max-w-[1400px] mx-auto">
         <div className="flex items-center justify-between mb-6">
           <p className="text-sm text-muted-foreground">{isLoading ? "—" : `${spaces.length} spaces`}</p>
-          <Button size="sm" onClick={() => navigate("/spaces/new")} className="gap-1.5"><Plus className="h-3.5 w-3.5" /> New Space</Button>
+          {canManage && <Button size="sm" onClick={() => navigate("/spaces/new")} className="gap-1.5"><Plus className="h-3.5 w-3.5" /> New Space</Button>}
         </div>
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -116,13 +115,14 @@ const Spaces = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {spaces.map((s, i) => {
-              const stats = getSpaceStats(s.id);
+              const stats = getSpaceStats(s);
               return (
                 <div key={s.id} onClick={() => navigate(`/spaces/${s.id}`)} className="glass-card hover-lift p-5 cursor-pointer animate-fade-in opacity-0" style={{ animationDelay: `${i * 60}ms` }}>
                   <div className="flex items-start justify-between mb-3">
                     <div className={cn("h-10 w-10 rounded-xl border flex items-center justify-center", spaceColors[i % spaceColors.length])}>
                       <FolderKanban className="h-5 w-5" />
                     </div>
+                    {canManage && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button onClick={(e) => e.stopPropagation()} className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-secondary/50">
@@ -138,6 +138,7 @@ const Spaces = () => {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    )}
                   </div>
                   <h3 className="text-base font-semibold text-foreground">{s.name}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5 mb-4">{s.description || "No description"}</p>

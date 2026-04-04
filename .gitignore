@@ -8,6 +8,12 @@ backend/**/*.user
 backend/**/*.suo
 backend/**/.idea/
 backend/**/appsettings.Development.json
+backend/**/*.db
+backend/**/*.db-shm
+backend/**/*.db-wal
+backend/**/app.db
+backend/**/prism.db
+backend/**/uploads/
 
 # =========================
 # Node.js / React Frontend

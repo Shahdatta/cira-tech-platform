@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,13 +32,32 @@ const editEntrySchema = z.object({
 type ManualEntryValues = z.infer<typeof manualEntrySchema>;
 type EditEntryValues = z.infer<typeof editEntrySchema>;
 
+const TIMER_KEY = "cira_timer";
+
+function saveTimer(taskId: string, startEpoch: number, taskTitle?: string) {
+  localStorage.setItem(TIMER_KEY, JSON.stringify({ taskId, startEpoch, taskTitle }));
+}
+function clearTimer() {
+  localStorage.removeItem(TIMER_KEY);
+}
+function loadTimer(): { taskId: string; startEpoch: number } | null {
+  try { return JSON.parse(localStorage.getItem(TIMER_KEY) || "null"); } catch { return null; }
+}
+
 const TimeTracking = () => {
-  const [running, setRunning] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [activeTaskId, setActiveTaskId] = useState("none");
+  // Restore any running timer from a previous session / navigation
+  const saved = loadTimer();
+  const [running, setRunning] = useState(!!saved);
+  const [elapsedSeconds, setElapsedSeconds] = useState(
+    saved ? Math.floor((Date.now() - saved.startEpoch) / 1000) : 0
+  );
+  const [activeTaskId, setActiveTaskId] = useState(saved?.taskId ?? "none");
+  const startEpochRef = useRef<number>(saved?.startEpoch ?? 0);
   const [taskFilter, setTaskFilter] = useState("all");
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [editingLog, setEditingLog] = useState<any | null>(null);
+
+  const { user: authUser } = useAuth();
 
   const manualForm = useForm<ManualEntryValues>({
     resolver: zodResolver(manualEntrySchema),
@@ -81,8 +101,14 @@ const TimeTracking = () => {
     queryFn: () => api.get<any[]>("/profiles"),
   });
 
-  const currentUser = profiles.find((p: any) => p.email === "ahmed.nabil@ciratech.com") || profiles[0];
-  const myTasks = tasks.filter((t: any) => t.assignee_id === currentUser?.user_id);
+  const currentUser = profiles.find((p: any) => p.email === authUser?.email) || profiles[0];
+  // Use the JWT id directly (= Profile.Id = TaskAssignees.AssigneeId) for reliable matching.
+  // Also check assignee_ids array so that shared-task members beyond the first assignee still see the task.
+  const myUserId = authUser?.id ?? currentUser?.user_id;
+  const myTasks = tasks.filter((t: any) =>
+    t.assignee_id === myUserId ||
+    (Array.isArray(t.assignee_ids) && t.assignee_ids.includes(myUserId))
+  );
 
   const todayHours = timeLogs
     .filter((l) => new Date(l.start_time).toDateString() === new Date().toDateString())
@@ -109,16 +135,18 @@ const TimeTracking = () => {
       manualForm.reset();
       setElapsedSeconds(0);
       setActiveTaskId("none");
+      startEpochRef.current = 0;
+      clearTimer();
     },
     onError: () => toast.error("Failed to log time"),
   });
 
   const updateMut = useMutation({
-    mutationFn: (data: any) => api.put(`/timelogs/${data.id}`, { 
-      durationHours: data.duration_hours, 
-      taskId: data.task_id === "none" ? null : data.task_id, 
-      isBillable: data.is_billable, 
-      reasonManual: data.reason_manual 
+    mutationFn: (data: any) => api.put(`/timelogs/${data.id}`, {
+      duration_hours: data.duration_hours,
+      task_id: data.task_id === "none" ? null : data.task_id,
+      is_billable: data.is_billable,
+      reason_manual: data.reason_manual
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["time_logs_page"] });
@@ -137,28 +165,76 @@ const TimeTracking = () => {
     }
   });
 
+  const startTaskMut = useMutation({
+    mutationFn: (taskId: string) => api.patch(`/tasks/${taskId}/status`, { status: "InProgress" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks_for_time"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks_page"] });
+    },
+  });
+
+  const handleToggleTimer = () => {
+    const nowStarting = !running;
+    if (nowStarting) {
+      // Record actual wall-clock start time so it survives navigation
+      const epoch = Date.now() - elapsedSeconds * 1000;
+      startEpochRef.current = epoch;
+      const selectedTask = (tasks as any[]).find((t: any) => t.id === activeTaskId);
+      saveTimer(activeTaskId, epoch, selectedTask?.title);
+      window.dispatchEvent(new Event("cira_timer_change"));
+      // Auto-advance task from ToDo → InProgress
+      if (activeTaskId !== "none" && selectedTask &&
+          (selectedTask.status === "ToDo" || selectedTask.status === "todo")) {
+        startTaskMut.mutate(activeTaskId);
+        toast.info(`"${selectedTask.title}" moved to In Progress`);
+      }
+    } else {
+      clearTimer();
+      window.dispatchEvent(new Event("cira_timer_change"));
+    }
+    setRunning(nowStarting);
+  };
+
   useEffect(() => {
     if (running) {
-      timerRef.current = setInterval(() => setElapsedSeconds(prev => prev + 1), 1000);
+      // Tick every second; derive elapsed from wall-clock so accuracy survives tab sleep
+      timerRef.current = setInterval(() => {
+        setElapsedSeconds(Math.floor((Date.now() - startEpochRef.current) / 1000));
+      }, 1000);
     } else if (!running && elapsedSeconds > 0) {
       if (timerRef.current) clearInterval(timerRef.current);
-      // Automatically log the timer when stopped if larger than 1 minute (or testing 1 sec)
-      if (elapsedSeconds > 0) {
-         const taskName = activeTaskId !== "none" ? tasks.find((t: any) => t.id === activeTaskId)?.title : "Ad-hoc task";
-         logTimeMut.mutate({
-           task_id: activeTaskId === "none" ? null : activeTaskId,
-           user_id: currentUser?.user_id || "00000000-0000-0000-0000-000000000000",
-           start_time: new Date(Date.now() - elapsedSeconds * 1000).toISOString(),
-           end_time: new Date().toISOString(),
-           duration_hours: elapsedSeconds / 3600,
-           is_billable: true,
-           is_manual_entry: false,
-           reason_manual: taskName,
-         });
-      }
+      const taskName = activeTaskId !== "none"
+        ? (tasks as any[]).find((t: any) => t.id === activeTaskId)?.title
+        : "Ad-hoc task";
+      logTimeMut.mutate({
+        task_id: activeTaskId === "none" ? null : activeTaskId,
+        user_id: currentUser?.user_id || "00000000-0000-0000-0000-000000000000",
+        start_time: new Date(startEpochRef.current).toISOString(),
+        end_time: new Date().toISOString(),
+        duration_hours: elapsedSeconds / 3600,
+        is_billable: true,
+        is_manual_entry: false,
+        reason_manual: taskName,
+      });
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [running]);
+
+  // Sync: if the timer was stopped from the navbar while this page is open,
+  // reset local running state without double-logging (elapsedSeconds is set to 0 first).
+  useEffect(() => {
+    function onExternalStop() {
+      if (!localStorage.getItem(TIMER_KEY)) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        setElapsedSeconds(0);
+        setRunning(false);
+        setActiveTaskId("none");
+        startEpochRef.current = 0;
+      }
+    }
+    window.addEventListener("cira_timer_change", onExternalStop);
+    return () => window.removeEventListener("cira_timer_change", onExternalStop);
+  }, []);
 
   const onManualSubmit = (values: ManualEntryValues) => {
     logTimeMut.mutate({
@@ -203,7 +279,7 @@ const TimeTracking = () => {
             <div className="flex items-center gap-3">
               <span className="text-2xl font-mono font-bold text-foreground tabular-nums min-w-[120px] text-center">{formattedTime}</span>
               <button
-                onClick={() => setRunning(!running)}
+                onClick={handleToggleTimer}
                 className={cn("h-11 w-11 rounded-full flex items-center justify-center transition-all shadow-sm", running ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : "bg-primary text-primary-foreground hover:bg-primary/90")}
               >
                 {running ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}

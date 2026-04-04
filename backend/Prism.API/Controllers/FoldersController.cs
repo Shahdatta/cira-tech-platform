@@ -9,7 +9,7 @@ namespace Prism.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    // [Authorize] // Disabled for testing
+    [Authorize]
     public class FoldersController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -22,7 +22,46 @@ namespace Prism.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<FolderDto>>> GetAllFolders()
         {
-            var folders = await _context.Folders
+            var roleString = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            Guid.TryParse(userIdString, out var userId);
+
+            IQueryable<Folder> query = _context.Folders;
+
+            if (roleString == "Admin")
+            {
+                // Admin sees all
+            }
+            else if (roleString == "PM" && userId != Guid.Empty)
+            {
+                var pmSpaceIds = await _context.ProjectSpaces
+                    .Where(s => !s.IsDeleted && s.ManagerId == userId)
+                    .Select(s => s.Id).ToListAsync();
+                var memberSpaceIds = await _context.ProjectMembers
+                    .Where(pm => pm.UserId == userId)
+                    .Select(pm => pm.SpaceId).ToListAsync();
+                var allSpaceIds = pmSpaceIds.Union(memberSpaceIds).ToList();
+                query = query.Where(f => allSpaceIds.Contains(f.SpaceId));
+            }
+            else if (userId != Guid.Empty)
+            {
+                // Member sees folders of projects they are a member or assignee of
+                var memberSpaceIds = await _context.ProjectMembers
+                    .Where(pm => pm.UserId == userId)
+                    .Select(pm => pm.SpaceId).ToListAsync();
+                var taskSpaceIds = await (
+                    from ta in _context.TaskAssignees
+                    join t in _context.Tasks on ta.TaskId equals t.Id
+                    join l in _context.Lists on t.ListId equals l.Id
+                    join f2 in _context.Folders on l.FolderId equals f2.Id
+                    where ta.AssigneeId == userId && !t.IsDeleted
+                    select f2.SpaceId
+                ).ToListAsync();
+                var allSpaceIds = memberSpaceIds.Union(taskSpaceIds).Distinct().ToList();
+                query = query.Where(f => allSpaceIds.Contains(f.SpaceId));
+            }
+
+            var folders = await query
                 .Select(f => new FolderDto
                 {
                     Id = f.Id,
@@ -36,6 +75,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "AdminOrPM")]
         public async Task<ActionResult<FolderDto>> CreateFolder(CreateFolderDto dto)
         {
             var folder = new Folder

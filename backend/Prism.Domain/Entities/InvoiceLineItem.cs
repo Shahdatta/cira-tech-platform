@@ -18,10 +18,13 @@ namespace Prism.Domain.Entities
         public Guid? TimeLogId { get; set; }
 
         [Column("description")]
-        public string? Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
-        [Column("quantity_hours")]
-        public decimal QuantityHours { get; set; }
+        [Column("quantity")]
+        public decimal Quantity { get; set; } = 1;
+
+        [Column("unit")]
+        public string Unit { get; set; } = "item";
 
         [Column("unit_price")]
         public decimal UnitPrice { get; set; }

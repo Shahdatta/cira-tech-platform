@@ -42,18 +42,18 @@ const allRoles: AppRole[] = ["admin", "pm", "hr", "member", "guest"];
 
 const mainNav: NavItem[] = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: allRoles },
-  { title: "Spaces", url: "/spaces", icon: FolderKanban, roles: ["admin", "pm"] },
+  { title: "Spaces", url: "/spaces", icon: FolderKanban, roles: ["admin", "pm", "member"] },
   { title: "Tasks", url: "/tasks", icon: CheckSquare, roles: ["admin", "pm", "member"] },
-  { title: "Time Tracking", url: "/time-tracking", icon: Clock, roles: ["admin", "pm", "member"] },
+  { title: "Time Tracking", url: "/time-tracking", icon: Clock, roles: ["admin", "pm", "hr", "member"] },
 ];
 
 const commsNav: NavItem[] = [
-  { title: "Chat", url: "/chat", icon: MessageSquare, roles: ["admin", "pm", "hr", "member"] },
+  { title: "Chat", url: "/chat", icon: MessageSquare, roles: allRoles },
 ];
 
 const hrNav: NavItem[] = [
   { title: "HR Hub", url: "/hr", icon: Users, roles: ["admin", "hr"] },
-  { title: "Invoices", url: "/invoices", icon: FileText, roles: ["admin", "hr"] },
+  { title: "Invoices", url: "/invoices", icon: FileText, roles: ["admin", "pm"] },
   { title: "Reports", url: "/reports", icon: BarChart3, roles: ["admin", "pm", "hr"] },
 ];
 
