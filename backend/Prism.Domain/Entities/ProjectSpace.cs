@@ -23,6 +23,15 @@ namespace Prism.Domain.Entities
         [Column("total_budget")]
         public decimal TotalBudget { get; set; }
 
+        [Column("spent_budget")]
+        public decimal SpentBudget { get; set; }
+
+        [Column("start_date")]
+        public DateTime? StartDate { get; set; }
+
+        [Column("end_date")]
+        public DateTime? EndDate { get; set; }
+
         [Column("status")]
         public string Status { get; set; } = "active";
 

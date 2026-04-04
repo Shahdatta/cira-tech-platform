@@ -29,6 +29,15 @@ namespace Prism.Domain.Entities
         [Column("hr_comments")]
         public string? HrComments { get; set; }
 
+        [Column("review_period")]
+        public string? ReviewPeriod { get; set; }
+
+        [Column("goals")]
+        public string? Goals { get; set; }
+
+        [Column("appraisal_status")]
+        public string AppraisalStatus { get; set; } = "Final";
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

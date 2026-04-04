@@ -51,14 +51,15 @@ export function useDashboardStats() {
   const { data: invoices = [], isLoading: loadingInvoices } = useInvoices();
 
   const activeProjects = projects.filter((p) => p.status === "active").length;
-  const openTasks = tasks.filter((t) => t.status !== "done").length;
+  // Backend serializes TaskStatus enum as PascalCase ("Done", "ToDo", etc.)
+  const openTasks = tasks.filter((t) => t.status?.toLowerCase() !== "done").length;
   const totalHours = timeLogs.reduce((sum, l) => sum + (l.duration_hours ?? 0), 0);
   const activeMembers = profiles.filter((p) => p.is_active).length;
   const totalRevenue = invoices
-    .filter((i) => i.status === "paid")
+    .filter((i) => i.status?.toLowerCase() === "paid")
     .reduce((sum, i) => sum + (i.total_amount ?? 0), 0);
 
-  const doneTasks = tasks.filter((t) => t.status === "done").length;
+  const doneTasks = tasks.filter((t) => t.status?.toLowerCase() === "done").length;
   const efficiency = tasks.length > 0 ? Math.round((doneTasks / tasks.length) * 100) : 0;
 
   return {

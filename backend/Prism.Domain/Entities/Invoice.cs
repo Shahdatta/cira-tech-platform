@@ -10,6 +10,14 @@ namespace Prism.Domain.Entities
         Paid
     }
 
+    public enum InvoiceType
+    {
+        Payroll,
+        Tools,
+        Hardware,
+        Services
+    }
+
     [Table("invoices")]
     public class Invoice
     {
@@ -27,6 +35,18 @@ namespace Prism.Domain.Entities
 
         [Column("space_id")]
         public Guid? SpaceId { get; set; }
+
+        [Column("invoice_type")]
+        public InvoiceType InvoiceType { get; set; } = InvoiceType.Services;
+
+        [Column("recipient_name")]
+        public string? RecipientName { get; set; }
+
+        [Column("notes")]
+        public string? Notes { get; set; }
+
+        [Column("payroll_ref_id")]
+        public Guid? PayrollRefId { get; set; }
 
         [Column("issue_date")]
         public DateTime IssueDate { get; set; } = DateTime.UtcNow;

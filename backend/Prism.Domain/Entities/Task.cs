@@ -8,7 +8,16 @@ namespace Prism.Domain.Entities
         ToDo,
         InProgress,
         InReview,
-        Done
+        Done,
+        Rejected
+    }
+
+    public enum TaskPriority
+    {
+        Low,
+        Medium,
+        High,
+        Urgent
     }
 
     [Table("tasks")]
@@ -35,6 +44,18 @@ namespace Prism.Domain.Entities
         [Column("status")]
         public TaskStatus Status { get; set; } = TaskStatus.ToDo;
 
+        [Column("priority")]
+        public TaskPriority Priority { get; set; } = TaskPriority.Medium;
+
+        [Column("estimated_hours")]
+        public decimal? EstimatedHours { get; set; }
+
+        [Column("reviewer_id")]
+        public Guid? ReviewerId { get; set; }
+
+        [Column("reviewed_at")]
+        public DateTime? ReviewedAt { get; set; }
+
         [Column("due_date")]
         public DateTime? DueDate { get; set; }
 
@@ -53,6 +74,10 @@ namespace Prism.Domain.Entities
         [ForeignKey("AssigneeId")]
         public virtual Profile? Assignee { get; set; }
 
+        [ForeignKey("ReviewerId")]
+        public virtual Profile? Reviewer { get; set; }
+
         public virtual ICollection<TimeLog> TimeLogs { get; set; } = new List<TimeLog>();
+        public virtual ICollection<TaskAssignee> Assignees { get; set; } = new List<TaskAssignee>();
     }
 }

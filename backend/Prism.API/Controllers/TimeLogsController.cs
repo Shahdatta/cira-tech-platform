@@ -9,7 +9,8 @@ namespace Prism.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    // [Authorize] // Disabled for testing
+    [Authorize]
+    [Authorize(Policy = "NotGuest")]
     public class TimeLogsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -22,8 +23,17 @@ namespace Prism.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TimeLogDto>>> GetTimeLogs()
         {
-            var logs = await _context.TimeLogs
-                .Where(t => !t.IsDeleted)
+            var roleString = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdString, out var userId)) return Unauthorized();
+
+            var query = _context.TimeLogs
+                .Where(t => !t.IsDeleted);
+
+            if (roleString != "Admin" && roleString != "PM" && roleString != "HR")
+                query = query.Where(t => t.UserId == userId);
+
+            var logs = await query
                 .OrderByDescending(t => t.CreatedAt)
                 .Take(50)
                 .Select(t => new TimeLogDto
@@ -48,11 +58,19 @@ namespace Prism.API.Controllers
         [HttpPost]
         public async Task<ActionResult<TimeLogDto>> CreateTimeLog(CreateTimeLogDto dto)
         {
+            var roleString = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdString, out var requesterId)) return Unauthorized();
+
+            var effectiveUserId = (roleString == "Admin" || roleString == "PM" || roleString == "HR")
+                ? (dto.UserId != Guid.Empty ? dto.UserId : requesterId)
+                : requesterId;
+
             var log = new TimeLog
             {
                 Id = Guid.NewGuid(),
                 TaskId = dto.TaskId,
-                UserId = dto.UserId,
+                UserId = effectiveUserId,
                 StartTime = dto.StartTime,
                 EndTime = dto.EndTime,
                 DurationHours = dto.DurationHours,
@@ -85,8 +103,15 @@ namespace Prism.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTimeLog(Guid id, CreateTimeLogDto dto)
         {
+            var roleString = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdString, out var userId)) return Unauthorized();
+
             var log = await _context.TimeLogs.FindAsync(id);
             if (log == null || log.IsDeleted) return NotFound();
+
+            var canManageAny = roleString == "Admin" || roleString == "PM" || roleString == "HR";
+            if (!canManageAny && log.UserId != userId) return Forbid();
 
             log.DurationHours = dto.DurationHours;
             log.IsBillable = dto.IsBillable;
@@ -100,8 +125,15 @@ namespace Prism.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTimeLog(Guid id)
         {
+            var roleString = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdString, out var userId)) return Unauthorized();
+
             var log = await _context.TimeLogs.FindAsync(id);
             if (log == null || log.IsDeleted) return NotFound();
+
+            var canManageAny = roleString == "Admin" || roleString == "PM" || roleString == "HR";
+            if (!canManageAny && log.UserId != userId) return Forbid();
 
             log.IsDeleted = true;
             await _context.SaveChangesAsync();

@@ -10,6 +10,12 @@ namespace Prism.Domain.Entities
         FL
     }
 
+    public enum PaymentMethod
+    {
+        BankTransfer,
+        Cash
+    }
+
     [Table("profiles")]
     public class Profile
     {
@@ -35,6 +41,12 @@ namespace Prism.Domain.Entities
         [Column("hourly_rate")]
         public decimal HourlyRate { get; set; }
 
+        [Column("base_salary")]
+        public decimal BaseSalary { get; set; }
+
+        [Column("hours_per_week")]
+        public int HoursPerWeek { get; set; } = 40;
+
         [Column("contract_type")]
         public ContractType ContractType { get; set; } = ContractType.FT;
 
@@ -44,11 +56,27 @@ namespace Prism.Domain.Entities
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        [Column("phone")]
+        public string? Phone { get; set; }
+
         [Column("is_deleted")]
         public bool IsDeleted { get; set; } = false;
 
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // Bank Information
+        [Column("bank_name")]
+        public string? BankName { get; set; }
+
+        [Column("account_number")]
+        public string? AccountNumber { get; set; }
+
+        [Column("iban")]
+        public string? Iban { get; set; }
+
+        [Column("payment_method")]
+        public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.BankTransfer;
 
         // Navigation properties
         public virtual ICollection<UserRole> Roles { get; set; } = new List<UserRole>();

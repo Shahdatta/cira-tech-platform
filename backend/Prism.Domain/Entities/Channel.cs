@@ -27,5 +27,7 @@ namespace Prism.Domain.Entities
         public virtual ProjectSpace? ProjectSpace { get; set; }
 
         public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
+        public virtual ICollection<ChannelMember> Members { get; set; } = new List<ChannelMember>();
+        public virtual ICollection<ChannelInvitation> Invitations { get; set; } = new List<ChannelInvitation>();
     }
 }
