@@ -1,6 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useState, useEffect } from "react";
-import { User, Bell, Shield, Palette, Globe, Save, Eye, EyeOff, Loader2, Camera, Check, Landmark } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { User, Bell, Shield, Palette, Globe, Save, Eye, EyeOff, Loader2, Camera, Check, Landmark, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +45,37 @@ function initials(name: string) {
 function ProfileTab({ me }: { me: any }) {
   const queryClient = useQueryClient();
   const { updateUser } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (me?.id) {
+      const stored = localStorage.getItem(`cira_avatar_${me.id}`);
+      if (stored) setAvatarUrl(stored);
+    }
+  }, [me?.id]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Please select an image file"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("Image must be smaller than 2 MB"); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setAvatarUrl(dataUrl);
+      if (me?.id) localStorage.setItem(`cira_avatar_${me.id}`, dataUrl);
+      toast.success("Profile photo updated");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarUrl(null);
+    if (me?.id) localStorage.removeItem(`cira_avatar_${me.id}`);
+    toast.success("Profile photo removed");
+  };
+
   const [form, setForm] = useState({
     full_name: me?.full_name ?? "",
     phone: me?.phone ?? "",
@@ -90,9 +121,23 @@ function ProfileTab({ me }: { me: any }) {
 
       {/* Avatar */}
       <div className="flex items-center gap-5">
-        <div className={cn("relative h-20 w-20 rounded-2xl bg-gradient-to-br flex items-center justify-center shrink-0 shadow-lg", grad)}>
-          <span className="text-2xl font-bold text-white">{initials(form.full_name || "U")}</span>
-          <button className="absolute -bottom-1.5 -right-1.5 h-7 w-7 rounded-full bg-primary border-2 border-background flex items-center justify-center hover:bg-primary/90 transition-colors">
+        <div className={cn("relative h-20 w-20 rounded-2xl flex items-center justify-center shrink-0 shadow-lg overflow-hidden", !avatarUrl && `bg-gradient-to-br ${grad}`)}>
+          {avatarUrl
+            ? <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
+            : <span className="text-2xl font-bold text-white">{initials(form.full_name || "U")}</span>
+          }
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute -bottom-1.5 -right-1.5 h-7 w-7 rounded-full bg-primary border-2 border-background flex items-center justify-center hover:bg-primary/90 transition-colors"
+          >
             <Camera className="h-3 w-3 text-white" />
           </button>
         </div>
@@ -102,6 +147,29 @@ function ProfileTab({ me }: { me: any }) {
           <span className={cn("inline-block mt-2 text-[11px] font-semibold px-2 py-0.5 rounded-full border", ROLE_COLORS[me?.role] ?? ROLE_COLORS.Member)}>
             {me?.role ?? "Member"}
           </span>
+          <div className="flex items-center gap-2 mt-3">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              <Camera className="h-3.5 w-3.5" />
+              {avatarUrl ? "Change photo" : "Upload photo"}
+            </button>
+            {avatarUrl && (
+              <>
+                <span className="text-muted-foreground/40">·</span>
+                <button
+                  type="button"
+                  onClick={handleRemoveAvatar}
+                  className="flex items-center gap-1.5 text-xs font-medium text-destructive hover:text-destructive/80 transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Remove photo
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -148,11 +216,11 @@ function ProfileTab({ me }: { me: any }) {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground text-xs mb-1">Hourly Rate</p>
-              <p className="font-medium text-foreground">${me?.hourly_rate?.toFixed(2)}/hr</p>
+              <p className="font-medium text-foreground">EGP {me?.hourly_rate?.toFixed(2)}/hr</p>
             </div>
             <div>
               <p className="text-muted-foreground text-xs mb-1">Base Salary</p>
-              <p className="font-medium text-foreground">${me?.base_salary?.toFixed(0)}/yr</p>
+              <p className="font-medium text-foreground">EGP {me?.base_salary?.toFixed(0)}/yr</p>
             </div>
           </div>
         </div>
@@ -384,9 +452,28 @@ function NotificationsTab() {
   );
 }
 
+const THEMES = [
+  { id: "light", label: "Light", bg: "bg-[#f8fafc]", border: "border-slate-300" },
+  { id: "dim",   label: "Dim",   bg: "bg-[#1e293b]", border: "" },
+  { id: "dark",  label: "Dark",  bg: "bg-[#0f172a]", border: "" },
+];
+
+function applyTheme(t: string) {
+  document.documentElement.classList.remove("dark", "dim");
+  if (t === "dark" || t === "dim") document.documentElement.classList.add(t);
+  localStorage.setItem("cira_theme", t);
+}
+
 // ── Appearance Tab ────────────────────────────────────────────────────
 function AppearanceTab() {
   const [density, setDensity] = useState("comfortable");
+  const [theme, setTheme] = useState(() => localStorage.getItem("cira_theme") ?? "light");
+
+  const handleTheme = (t: string) => {
+    setTheme(t);
+    applyTheme(t);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -396,13 +483,18 @@ function AppearanceTab() {
       <div className="space-y-1.5">
         <Label>Theme</Label>
         <div className="flex gap-3 mt-2">
-          {[
-            { id: "dark", label: "Dark", bg: "bg-[#0f172a]" },
-            { id: "dim", label: "Dim", bg: "bg-[#1e293b]" },
-          ].map(t => (
-            <button key={t.id} className={cn("flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-colors", "border-primary")}>
-              <div className={cn("h-12 w-20 rounded-lg", t.bg, "border border-white/10")} />
-              <span className="text-xs font-medium text-foreground">{t.label}</span>
+          {THEMES.map(t => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => handleTheme(t.id)}
+              className={cn(
+                "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-colors",
+                theme === t.id ? "border-primary" : "border-border hover:border-muted-foreground"
+              )}
+            >
+              <div className={cn("h-12 w-20 rounded-lg border border-black/10", t.bg)} />
+              <span className={cn("text-xs font-medium", theme === t.id ? "text-primary" : "text-muted-foreground")}>{t.label}</span>
             </button>
           ))}
         </div>

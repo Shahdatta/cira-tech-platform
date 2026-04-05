@@ -265,5 +265,196 @@ namespace Prism.API.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+
+        // GET /api/projects/{id}/report
+        [HttpGet("{id}/report")]
+        [Authorize(Policy = "AdminOrPM")]
+        public async Task<ActionResult<ProjectReportDto>> GetProjectReport(Guid id)
+        {
+            var space = await _context.ProjectSpaces
+                .Include(s => s.Manager)
+                .Include(s => s.Invoices)
+                .Include(s => s.Folders)
+                    .ThenInclude(f => f.Lists)
+                        .ThenInclude(l => l.Tasks.Where(t => !t.IsDeleted))
+                .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
+
+            if (space == null) return NotFound();
+
+            var allTasks = space.Folders
+                .SelectMany(f => f.Lists)
+                .SelectMany(l => l.Tasks)
+                .ToList();
+
+            var taskIds = allTasks.Select(t => t.Id).ToList();
+
+            // Time logs for all tasks in this project
+            var timeLogs = await _context.TimeLogs
+                .Where(tl => !tl.IsDeleted && tl.TaskId.HasValue && taskIds.Contains(tl.TaskId.Value))
+                .ToListAsync();
+
+            // Multi-assignee map
+            var assigneeRows = await _context.TaskAssignees
+                .Where(ta => taskIds.Contains(ta.TaskId))
+                .ToListAsync();
+            var taskAssigneeMap = assigneeRows
+                .GroupBy(ta => ta.TaskId)
+                .ToDictionary(g => g.Key, g => g.Select(ta => ta.AssigneeId).ToList());
+
+            // Collect all member IDs
+            var managerIdList = space.ManagerId.HasValue
+                ? new List<Guid> { space.ManagerId.Value } : new List<Guid>();
+            var explicitMemberIds = await _context.ProjectMembers
+                .Where(pm => pm.SpaceId == id)
+                .Select(pm => pm.UserId)
+                .ToListAsync();
+            var primaryAssigneeIds = allTasks
+                .Where(t => t.AssigneeId.HasValue)
+                .Select(t => t.AssigneeId!.Value)
+                .Distinct()
+                .ToList();
+            var multiAssigneeIds = assigneeRows.Select(ta => ta.AssigneeId).Distinct().ToList();
+
+            var allMemberIds = managerIdList
+                .Concat(explicitMemberIds)
+                .Concat(primaryAssigneeIds)
+                .Concat(multiAssigneeIds)
+                .Distinct()
+                .ToList();
+
+            var members = await _context.Profiles
+                .Include(p => p.Roles)
+                .Where(p => allMemberIds.Contains(p.UserId) && !p.IsDeleted)
+                .ToListAsync();
+
+            var now = DateTime.UtcNow;
+
+            // Per-member stats
+            var memberDtos = members.Select(m =>
+            {
+                var myTaskIds = allTasks
+                    .Where(t =>
+                        t.AssigneeId == m.UserId ||
+                        (taskAssigneeMap.TryGetValue(t.Id, out var ids) && ids.Contains(m.UserId)))
+                    .Select(t => t.Id)
+                    .ToHashSet();
+
+                return new ReportMemberDto
+                {
+                    UserId = m.UserId,
+                    FullName = m.FullName,
+                    Email = m.Email,
+                    Role = m.Roles.FirstOrDefault()?.Role.ToString().ToLower() ?? "member",
+                    TasksAssigned = myTaskIds.Count,
+                    TasksDone = allTasks.Count(t => myTaskIds.Contains(t.Id) && t.Status == Prism.Domain.Entities.TaskStatus.Done),
+                    HoursLogged = timeLogs
+                        .Where(tl => tl.UserId == m.UserId)
+                        .Sum(tl => tl.DurationHours ?? 0)
+                };
+            }).ToList();
+
+            // Task DTOs with Gantt data
+            var taskDtos = space.Folders
+                .SelectMany(f => f.Lists.Select(l => new { Folder = f, List = l }))
+                .SelectMany(fl => fl.List.Tasks
+                    .Where(t => !t.IsDeleted)
+                    .Select(t =>
+                    {
+                        var ids2 = taskAssigneeMap.TryGetValue(t.Id, out var list2)
+                            ? list2
+                            : (t.AssigneeId.HasValue ? new List<Guid> { t.AssigneeId.Value } : new List<Guid>());
+                        var assigneeName = ids2.Count > 0
+                            ? members.FirstOrDefault(m => m.UserId == ids2[0])?.FullName
+                            : null;
+
+                        return new ReportTaskDto
+                        {
+                            Id = t.Id,
+                            Title = t.Title,
+                            Description = t.Description,
+                            Status = t.Status.ToString(),
+                            Priority = t.Priority.ToString(),
+                            AssigneeName = assigneeName,
+                            FolderName = fl.Folder.Name,
+                            ListName = fl.List.Name,
+                            DueDate = t.DueDate,
+                            CreatedAt = t.CreatedAt,
+                            EstimatedHours = t.EstimatedHours,
+                            ActualHours = timeLogs
+                                .Where(tl => tl.TaskId == t.Id)
+                                .Sum(tl => tl.DurationHours ?? 0),
+                            IsOverdue = t.DueDate.HasValue
+                                && t.DueDate.Value < now
+                                && t.Status != Prism.Domain.Entities.TaskStatus.Done
+                        };
+                    }))
+                .ToList();
+
+            // Phase (folder) breakdown
+            var phases = space.Folders.Select(f =>
+            {
+                var folderTasks = f.Lists.SelectMany(l => l.Tasks.Where(t => !t.IsDeleted)).ToList();
+                var total = folderTasks.Count;
+                var done = folderTasks.Count(t => t.Status == Prism.Domain.Entities.TaskStatus.Done);
+                return new ReportPhaseDto
+                {
+                    FolderName = f.Name,
+                    TotalTasks = total,
+                    DoneTasks = done,
+                    ProgressPercent = total == 0 ? 0 : (int)Math.Round(done * 100.0 / total),
+                    Lists = f.Lists.Select(l => new ReportListDto
+                    {
+                        Name = l.Name,
+                        TotalTasks = l.Tasks.Count(t => !t.IsDeleted),
+                        DoneTasks = l.Tasks.Count(t => !t.IsDeleted && t.Status == Prism.Domain.Entities.TaskStatus.Done)
+                    }).ToList()
+                };
+            }).ToList();
+
+            var invoiceDtos = space.Invoices.Select(i => new ReportInvoiceDto
+            {
+                InvoiceNumber = i.InvoiceNumber,
+                Type = i.InvoiceType.ToString(),
+                Status = i.Status.ToString(),
+                TotalAmount = i.TotalAmount,
+                IssueDate = i.IssueDate,
+                Notes = i.Notes
+            }).ToList();
+
+            return Ok(new ProjectReportDto
+            {
+                Id = space.Id,
+                Name = space.Name,
+                Description = space.Description,
+                Status = space.Status,
+                StartDate = space.StartDate,
+                EndDate = space.EndDate,
+                TotalBudget = space.TotalBudget,
+                SpentBudget = space.SpentBudget,
+                ManagerName = space.Manager?.FullName,
+                GeneratedAt = now,
+                TotalTasks = allTasks.Count,
+                DoneTasks = allTasks.Count(t => t.Status == Prism.Domain.Entities.TaskStatus.Done),
+                InProgressTasks = allTasks.Count(t => t.Status == Prism.Domain.Entities.TaskStatus.InProgress),
+                InReviewTasks = allTasks.Count(t => t.Status == Prism.Domain.Entities.TaskStatus.InReview),
+                ToDoTasks = allTasks.Count(t => t.Status == Prism.Domain.Entities.TaskStatus.ToDo),
+                OverdueTasks = allTasks.Count(t =>
+                    t.DueDate.HasValue && t.DueDate.Value < now &&
+                    t.Status != Prism.Domain.Entities.TaskStatus.Done),
+                CompletionPercent = allTasks.Count == 0 ? 0
+                    : (int)Math.Round(allTasks.Count(t => t.Status == Prism.Domain.Entities.TaskStatus.Done) * 100.0 / allTasks.Count),
+                TotalHoursLogged = timeLogs.Sum(tl => tl.DurationHours ?? 0),
+                TotalHoursEstimated = allTasks.Sum(t => t.EstimatedHours ?? 0),
+                MembersCount = allMemberIds.Count,
+                TotalInvoiced = space.Invoices.Sum(i => i.TotalAmount),
+                PaidInvoiced = space.Invoices
+                    .Where(i => i.Status == Prism.Domain.Entities.InvoiceStatus.Paid)
+                    .Sum(i => i.TotalAmount),
+                Members = memberDtos,
+                Phases = phases,
+                Tasks = taskDtos,
+                Invoices = invoiceDtos
+            });
+        }
     }
 }

@@ -1,10 +1,11 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Send, Hash, Plus, ChevronDown, ChevronRight, Lock,
   Paperclip, Smile, AtSign, Settings, Loader2, UserPlus, Users,
+  Bell, BellOff, LogOut, ExternalLink, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,6 +20,9 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 
 // ── helpers ───────────────────────────────────────────────────────────
 const AVATAR_COLORS = [
@@ -127,6 +131,8 @@ const Chat = () => {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteSelected, setInviteSelected] = useState<string[]>([]);
+  const [muteNotifs, setMuteNotifs] = useState(false);
+  const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -304,7 +310,41 @@ const Chat = () => {
               </div>
               <span className="font-semibold text-sm text-white">CIRA PM</span>
             </div>
-            <Settings className="h-3.5 w-3.5 text-slate-500 hover:text-white cursor-pointer transition-colors" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-1 rounded hover:bg-white/10 transition-colors group">
+                  <Settings className="h-3.5 w-3.5 text-slate-500 group-hover:text-white transition-colors" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52 bg-[#1e2235] border-white/10 text-slate-200">
+                <DropdownMenuLabel className="text-slate-500 text-[11px]">Chat Settings</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-white/5" />
+                <DropdownMenuItem
+                  onClick={() => { setMuteNotifs(v => !v); toast.info(muteNotifs ? "Notifications unmuted" : "Notifications muted"); }}
+                  className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10"
+                >
+                  {muteNotifs
+                    ? <Bell className="h-3.5 w-3.5 text-slate-400" />
+                    : <BellOff className="h-3.5 w-3.5 text-slate-400" />}
+                  {muteNotifs ? "Unmute notifications" : "Mute notifications"}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate("/settings")}
+                  className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10"
+                >
+                  <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
+                  Account Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-white/5" />
+                <DropdownMenuItem
+                  onClick={() => setIsAddOpen(true)}
+                  className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10"
+                >
+                  <Plus className="h-3.5 w-3.5 text-slate-400" />
+                  New Channel
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Project tabs */}

@@ -302,7 +302,7 @@ function BudgetHealthChart({
       </CardHeader>
       <CardContent>
         <div className="text-xs text-muted-foreground mb-3">
-          ${spentBudget.toLocaleString()} spent of ${totalBudget.toLocaleString()} total
+          EGP {spentBudget.toLocaleString()} spent of EGP {totalBudget.toLocaleString()} total
         </div>
         {data.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">No active projects</p>
@@ -400,19 +400,19 @@ function PayrollSelfView({ data }: { data: MyPayrollSummary }) {
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="rounded-lg bg-muted/50 p-2 text-center">
             <div className="text-xs text-muted-foreground">Total Earned</div>
-            <div className="text-lg font-bold">${data.total_earned.toLocaleString()}</div>
+            <div className="text-lg font-bold">EGP {data.total_earned.toLocaleString()}</div>
           </div>
           <div className="rounded-lg bg-green-500/10 p-2 text-center">
             <div className="text-xs text-muted-foreground">Paid Out</div>
-            <div className="text-lg font-bold text-green-600">${data.paid_amount.toLocaleString()}</div>
+            <div className="text-lg font-bold text-green-600">EGP {data.paid_amount.toLocaleString()}</div>
           </div>
           <div className="rounded-lg bg-blue-500/10 p-2 text-center">
             <div className="text-xs text-muted-foreground">Approved</div>
-            <div className="text-sm font-semibold text-blue-600">${data.approved_amount.toLocaleString()}</div>
+            <div className="text-sm font-semibold text-blue-600">EGP {data.approved_amount.toLocaleString()}</div>
           </div>
           <div className="rounded-lg bg-muted/50 p-2 text-center">
             <div className="text-xs text-muted-foreground">Pending</div>
-            <div className="text-sm font-semibold">${data.pending_amount.toLocaleString()}</div>
+            <div className="text-sm font-semibold">EGP {data.pending_amount.toLocaleString()}</div>
           </div>
         </div>
         <div className="space-y-1.5 max-h-32 overflow-y-auto">
@@ -422,7 +422,7 @@ function PayrollSelfView({ data }: { data: MyPayrollSummary }) {
                 {new Date(p.period_start).toLocaleDateString()} — {new Date(p.period_end).toLocaleDateString()}
               </span>
               <div className="flex items-center gap-2">
-                <span className="font-medium">${p.net_amount.toLocaleString()}</span>
+                <span className="font-medium">EGP {p.net_amount.toLocaleString()}</span>
                 <Badge variant="outline" className={`text-[10px] ${statusColor[p.status] || ""}`}>{p.status}</Badge>
               </div>
             </div>

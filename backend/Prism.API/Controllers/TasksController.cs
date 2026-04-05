@@ -83,30 +83,8 @@ namespace Prism.API.Controllers
 
             var query = _context.Tasks.Where(t => !t.IsDeleted);
 
-            if (roleString == "Admin")
+            if (roleString != "Admin" && roleString != "PM" && userId != Guid.Empty)
             {
-                // Admin sees everything
-            }
-            else if (roleString == "PM" && userId != Guid.Empty)
-            {
-                // PM sees only tasks inside projects they manage or are a member of
-                var pmSpaceIds = await _context.ProjectSpaces
-                    .Where(s => !s.IsDeleted && s.ManagerId == userId)
-                    .Select(s => s.Id).ToListAsync();
-                var memberSpaceIds = await _context.ProjectMembers
-                    .Where(pm => pm.UserId == userId)
-                    .Select(pm => pm.SpaceId).ToListAsync();
-                var allSpaceIds = pmSpaceIds.Union(memberSpaceIds).ToList();
-
-                var listIds = await _context.Lists
-                    .Where(l => _context.Folders.Any(f => f.Id == l.FolderId && allSpaceIds.Contains(f.SpaceId)))
-                    .Select(l => l.Id).ToListAsync();
-
-                query = query.Where(t => listIds.Contains(t.ListId));
-            }
-            else if (userId != Guid.Empty)
-            {
-                // Member sees only tasks assigned to them
                 var assignedIds = await _context.TaskAssignees
                     .Where(ta => ta.AssigneeId == userId)
                     .Select(ta => ta.TaskId).ToListAsync();
@@ -127,27 +105,7 @@ namespace Prism.API.Controllers
 
             var query = _context.Tasks.Where(t => t.ListId == listId && !t.IsDeleted);
 
-            if (roleString == "Admin")
-            {
-                // Admin sees all
-            }
-            else if (roleString == "PM" && userId != Guid.Empty)
-            {
-                // Verify PM has access to the folder/space this list belongs to
-                var pmSpaceIds = await _context.ProjectSpaces
-                    .Where(s => !s.IsDeleted && s.ManagerId == userId)
-                    .Select(s => s.Id).ToListAsync();
-                var memberSpaceIds = await _context.ProjectMembers
-                    .Where(pm => pm.UserId == userId)
-                    .Select(pm => pm.SpaceId).ToListAsync();
-                var allSpaceIds = pmSpaceIds.Union(memberSpaceIds).ToList();
-
-                var hasAccess = await _context.Lists
-                    .Where(l => l.Id == listId)
-                    .AnyAsync(l => _context.Folders.Any(f => f.Id == l.FolderId && allSpaceIds.Contains(f.SpaceId)));
-                if (!hasAccess) return Forbid();
-            }
-            else if (userId != Guid.Empty)
+            if (roleString != "Admin" && roleString != "PM" && userId != Guid.Empty)
             {
                 var assignedIds = await _context.TaskAssignees
                     .Where(ta => ta.AssigneeId == userId)
@@ -326,17 +284,6 @@ namespace Prism.API.Controllers
             task.Status = Prism.Domain.Entities.TaskStatus.InReview;
             task.UpdatedAt = DateTime.UtcNow;
 
-            // Auto-stop any running time logs for this task
-            var runningLogs = await _context.TimeLogs
-                .Where(tl => tl.TaskId == id && tl.EndTime == null && !tl.IsDeleted)
-                .ToListAsync();
-            var now = DateTime.UtcNow;
-            foreach (var tl in runningLogs)
-            {
-                tl.EndTime = now;
-                tl.DurationHours = (decimal)(now - tl.StartTime).TotalHours;
-            }
-
             // Save member report if content provided
             if (!string.IsNullOrWhiteSpace(dto?.Content))
             {
@@ -353,25 +300,14 @@ namespace Prism.API.Controllers
 
             await _context.SaveChangesAsync();
 
-            // Notify only the manager of the project this task belongs to (+ any Admin)
-            var projectManagerIds = await (
-                from t2 in _context.Tasks
-                join l in _context.Lists on t2.ListId equals l.Id
-                join f in _context.Folders on l.FolderId equals f.Id
-                join s in _context.ProjectSpaces on f.SpaceId equals s.Id
-                where t2.Id == id && s.ManagerId.HasValue
-                select s.ManagerId.Value
-            ).Distinct().ToListAsync();
-
-            var adminIds = await _context.UserRoles
-                .Where(r => r.Role == AppRole.Admin)
-                .Select(r => r.UserId).ToListAsync();
-
-            var notifyIds = projectManagerIds.Union(adminIds).Distinct().ToList();
-            if (notifyIds.Count > 0)
-                await NotifyUsersAsync(notifyIds,
+            // Notify all Admins and PMs
+            var adminPmIds = await _context.UserRoles
+                .Where(r => r.Role == AppRole.Admin || r.Role == AppRole.PM)
+                .Select(r => r.UserId).Distinct().ToListAsync();
+            if (adminPmIds.Count > 0)
+                await NotifyUsersAsync(adminPmIds,
                     "Review Requested",
-                    $"Task '" + task.Title + "' has been submitted for review.",
+                    $"Task '{task.Title}' has been submitted for review.",
                     "TaskInReview", id);
             return Ok(new { message = "Task submitted for review." });
         }

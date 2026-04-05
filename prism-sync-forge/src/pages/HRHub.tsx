@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
+import { useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { EmployeeDetailsSheet } from "@/components/hr/EmployeeDetailsSheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -244,7 +245,7 @@ const HRHub = () => {
           <StatsCard title="On Leave" value={loadingProfiles ? "—" : String(onLeave)} icon={Clock} delay={100} />
           <StatsCard
             title="Total Payroll (Net)"
-            value={summary ? `$${Number(summary.grand_total ?? summary.grandTotal ?? 0).toLocaleString()}` : "—"}
+            value={summary ? `EGP ${Number(summary.grand_total ?? summary.grandTotal ?? 0).toLocaleString()}` : "—"}
             icon={DollarSign}
             delay={150}
           />
@@ -263,7 +264,7 @@ const HRHub = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">{label}</p>
-                <p className="text-xl font-bold text-foreground font-mono">${Number(total).toLocaleString()}</p>
+                <p className="text-xl font-bold text-foreground font-mono">EGP {Number(total).toLocaleString()}</p>
                 <p className="text-[11px] text-muted-foreground">{count} payroll record{count !== 1 ? "s" : ""}</p>
               </div>
             </div>
@@ -347,10 +348,10 @@ const HRHub = () => {
                         <div className="rounded-lg bg-secondary/30 border border-border/50 px-4 py-3 text-xs space-y-1">
                           <p className="font-semibold text-foreground">Calculation method for {contractLabels[contractType4pay]}:</p>
                           {contractType4pay === "ft" && (
-                            <p className="text-muted-foreground">Base salary (${selectedProfile.base_salary ?? 0}/mo) + Overtime (hours × ${selectedProfile.hourly_rate}/hr × 1.5) + Performance bonus</p>
+                            <p className="text-muted-foreground">Base salary (EGP {selectedProfile.base_salary ?? 0}/mo) + Overtime (hours × EGP {selectedProfile.hourly_rate}/hr × 1.5) + Performance bonus</p>
                           )}
                           {(contractType4pay === "pt" || contractType4pay === "fl") && (
-                            <p className="text-muted-foreground">Total hours × ${selectedProfile.hourly_rate}/hr + Performance bonus</p>
+                            <p className="text-muted-foreground">Total hours × EGP {selectedProfile.hourly_rate}/hr + Performance bonus</p>
                           )}
                           <p className="text-muted-foreground">Performance bonus tiers: ≥90 → +10% | ≥75 → +5% | below → 0%</p>
                         </div>
@@ -394,7 +395,7 @@ const HRHub = () => {
                                   </>
                                 )}
                                 <span>Estimated pay:</span>
-                                <span className="font-semibold text-success">${payPreview.estimated_pay.toLocaleString()}</span>
+                                <span className="font-semibold text-success">EGP {payPreview.estimated_pay.toLocaleString()}</span>
                               </div>
                               <p className="text-[10px] text-muted-foreground">Fields below are pre-filled. Adjust only if needed.</p>
                             </>
@@ -421,7 +422,7 @@ const HRHub = () => {
                         )}
                         <FormField control={payForm.control} name="deductions" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Deductions ($)</FormLabel>
+                            <FormLabel>Deductions (EGP)</FormLabel>
                             <FormControl><Input type="number" step="0.01" {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
@@ -513,20 +514,20 @@ const HRHub = () => {
                         <td className="pr-3 font-mono whitespace-nowrap">
                           <p>
                             {row.contract_type === "ft"
-                              ? `$${Number(row.base_salary).toLocaleString()}`
-                              : `$${row.hourly_rate}/hr`}
+                              ? `EGP ${Number(row.base_salary).toLocaleString()}`
+                              : `EGP ${row.hourly_rate}/hr`}
                           </p>
                           {row.contract_type === "ft" && row.overtime_pay > 0 && (
-                            <p className="text-[11px] text-warning">+${Number(row.overtime_pay).toFixed(0)} OT</p>
+                            <p className="text-[11px] text-warning">+EGP {Number(row.overtime_pay).toFixed(0)} OT</p>
                           )}
                         </td>
                         {/* Perf Bonus / Deductions */}
                         <td className="pr-3 font-mono">
                           {row.performance_bonus > 0 && (
-                            <p className="text-success text-[11px]">+${Number(row.performance_bonus).toFixed(0)} ({perfBadge(perfScore)})</p>
+                            <p className="text-success text-[11px]">+EGP {Number(row.performance_bonus).toFixed(0)} ({perfBadge(perfScore)})</p>
                           )}
                           {row.deductions > 0 && (
-                            <p className="text-destructive text-[11px]">-${Number(row.deductions).toFixed(0)}</p>
+                            <p className="text-destructive text-[11px]">-EGP {Number(row.deductions).toFixed(0)}</p>
                           )}
                           {!row.performance_bonus && !row.deductions && (
                             <span className="text-muted-foreground text-[11px]">—</span>
@@ -534,7 +535,7 @@ const HRHub = () => {
                         </td>
                         {/* Net Pay */}
                         <td className="pr-3 font-mono font-bold whitespace-nowrap">
-                          ${Number(row.net_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          EGP {Number(row.net_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         {/* Payment Method */}
                         <td className="pr-3">
@@ -653,12 +654,48 @@ const HRHub = () => {
                       </FormItem>
                     )} />
                     <div className="grid grid-cols-2 gap-3">
-                      <FormField control={empForm.control} name="hourly_rate" render={({ field }) => (
-                        <FormItem><FormLabel>Hourly Rate ($)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                      )} />
-                      <FormField control={empForm.control} name="base_salary" render={({ field }) => (
-                        <FormItem><FormLabel>Base Salary (FT)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                      )} />
+                      <FormField control={empForm.control} name="hourly_rate" render={({ field }) => {
+                        const contractType = useWatch({ control: empForm.control, name: "contract_type" });
+                        const isFullTime = contractType === "ft";
+                        return (
+                          <FormItem>
+                            <FormLabel className={isFullTime ? "text-muted-foreground" : undefined}>Hourly Rate (EGP)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                disabled={isFullTime}
+                                value={isFullTime ? 0 : field.value}
+                                onChange={(e) => { if (!isFullTime) field.onChange(e); }}
+                                className={isFullTime ? "opacity-40 cursor-not-allowed" : undefined}
+                                placeholder={isFullTime ? "N/A for Full-Time" : "0"}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }} />
+                      <FormField control={empForm.control} name="base_salary" render={({ field }) => {
+                        const contractType = useWatch({ control: empForm.control, name: "contract_type" });
+                        const isHourly = contractType === "pt" || contractType === "fl";
+                        return (
+                          <FormItem>
+                            <FormLabel className={isHourly ? "text-muted-foreground" : undefined}>Base Salary (EGP/mo)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                disabled={isHourly}
+                                value={isHourly ? 0 : field.value}
+                                onChange={(e) => { if (!isHourly) field.onChange(e); }}
+                                className={isHourly ? "opacity-40 cursor-not-allowed" : undefined}
+                                placeholder={isHourly ? "N/A for PT/FL" : "0"}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }} />
                     </div>
                     <div className="flex justify-end pt-2">
                       <Button type="submit" disabled={createEmpMut.isPending} className="gap-2">
@@ -706,8 +743,8 @@ const HRHub = () => {
                       <td className="pr-3"><span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-full", contractColors[e.contract_type ?? "ft"])}>{contractLabels[e.contract_type ?? "ft"]}</span></td>
                       <td className="pr-3 text-sm font-mono text-foreground">
                         {e.contract_type === "ft"
-                          ? `$${Number(e.base_salary ?? 0).toLocaleString()}/mo`
-                          : `$${e.hourly_rate ?? 0}/hr`}
+                          ? `EGP ${Number(e.base_salary ?? 0).toLocaleString()}/mo`
+                          : `EGP ${e.hourly_rate ?? 0}/hr`}
                       </td>
                       <td className="pr-3">
                         <span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-full", payMethodColors[e.payment_method ?? "BankTransfer"] ?? payMethodColors.BankTransfer)}>

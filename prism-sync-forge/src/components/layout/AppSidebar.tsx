@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole, type AppRole } from "@/contexts/RoleContext";
+import { useState, useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -131,6 +132,14 @@ export function AppSidebar() {
     ? user.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "??";
 
+  const [sidebarAvatar, setSidebarAvatar] = useState<string | null>(null);
+  useEffect(() => {
+    if (user?.id) {
+      const stored = localStorage.getItem(`cira_avatar_${user.id}`);
+      setSidebarAvatar(stored);
+    }
+  }, [user?.id]);
+
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
@@ -189,8 +198,11 @@ export function AppSidebar() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="flex items-center gap-2.5 mt-3 px-2 py-2 rounded-lg bg-secondary/60 cursor-pointer hover:bg-secondary transition-colors">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-xs font-bold text-primary">{initials}</span>
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
+                  {sidebarAvatar
+                    ? <img src={sidebarAvatar} alt="avatar" className="h-full w-full object-cover" />
+                    : <span className="text-xs font-bold text-primary">{initials}</span>
+                  }
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{user?.full_name || "User"}</p>
