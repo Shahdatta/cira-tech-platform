@@ -254,7 +254,7 @@ export default function SpaceDetails() {
           </div>
           <div className="glass-card p-4 flex items-center gap-4">
             <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center"><DollarSign className="h-5 w-5 text-warning" /></div>
-            <div><p className="text-sm font-semibold text-foreground">${space.total_budget?.toLocaleString() || 0}</p><p className="text-xs text-muted-foreground">Budget</p></div>
+            <div><p className="text-sm font-semibold text-foreground">EGP {space.total_budget?.toLocaleString() || 0}</p><p className="text-xs text-muted-foreground">Budget</p></div>
           </div>
           <div className="glass-card p-4 flex items-center gap-4">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center"><Users className="h-5 w-5 text-primary" /></div>

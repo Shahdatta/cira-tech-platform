@@ -537,4 +537,92 @@ namespace Prism.API.DTOs
         public decimal ApprovedAmount { get; set; }
         public decimal PaidAmount { get; set; }
     }
+
+    // ── Project Report ──
+    public class ProjectReportDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string Status { get; set; } = "active";
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public decimal TotalBudget { get; set; }
+        public decimal SpentBudget { get; set; }
+        public string? ManagerName { get; set; }
+        public DateTime GeneratedAt { get; set; }
+
+        // Summary KPIs
+        public int TotalTasks { get; set; }
+        public int DoneTasks { get; set; }
+        public int InProgressTasks { get; set; }
+        public int InReviewTasks { get; set; }
+        public int ToDoTasks { get; set; }
+        public int OverdueTasks { get; set; }
+        public int CompletionPercent { get; set; }
+        public decimal TotalHoursLogged { get; set; }
+        public decimal TotalHoursEstimated { get; set; }
+        public int MembersCount { get; set; }
+        public decimal TotalInvoiced { get; set; }
+        public decimal PaidInvoiced { get; set; }
+
+        public List<ReportMemberDto> Members { get; set; } = new();
+        public List<ReportPhaseDto> Phases { get; set; } = new();
+        public List<ReportTaskDto> Tasks { get; set; } = new();
+        public List<ReportInvoiceDto> Invoices { get; set; } = new();
+    }
+
+    public class ReportMemberDto
+    {
+        public Guid UserId { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = "member";
+        public int TasksAssigned { get; set; }
+        public int TasksDone { get; set; }
+        public decimal HoursLogged { get; set; }
+    }
+
+    public class ReportPhaseDto
+    {
+        public string FolderName { get; set; } = string.Empty;
+        public int TotalTasks { get; set; }
+        public int DoneTasks { get; set; }
+        public int ProgressPercent { get; set; }
+        public List<ReportListDto> Lists { get; set; } = new();
+    }
+
+    public class ReportListDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public int TotalTasks { get; set; }
+        public int DoneTasks { get; set; }
+    }
+
+    public class ReportTaskDto
+    {
+        public Guid Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string Priority { get; set; } = string.Empty;
+        public string? AssigneeName { get; set; }
+        public string FolderName { get; set; } = string.Empty;
+        public string ListName { get; set; } = string.Empty;
+        public DateTime? DueDate { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public decimal? EstimatedHours { get; set; }
+        public decimal ActualHours { get; set; }
+        public bool IsOverdue { get; set; }
+    }
+
+    public class ReportInvoiceDto
+    {
+        public string InvoiceNumber { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public decimal TotalAmount { get; set; }
+        public DateTime IssueDate { get; set; }
+        public string? Notes { get; set; }
+    }
 }

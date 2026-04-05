@@ -92,7 +92,7 @@ const EMPTY_ROW = (): LineItemRow => ({
 });
 
 function fmt(n: number) {
-  return `$${(n ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `EGP ${(n ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 const invoiceExportCols: ExportColumn<Invoice>[] = [

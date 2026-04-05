@@ -68,7 +68,7 @@ export function useDashboardStats() {
     openTasks,
     totalHours: totalHours.toFixed(0),
     activeMembers,
-    totalRevenue: `$${(totalRevenue / 1000).toFixed(1)}K`,
+    totalRevenue: `EGP ${(totalRevenue / 1000).toFixed(1)}K`,
     efficiency: `${efficiency}%`,
     projects,
     tasks,

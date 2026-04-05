@@ -17,14 +17,33 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
+const hhmmssRegex = /^\d{1,2}:[0-5]\d:[0-5]\d$/;
+function parseHHMMSS(val: string): number {
+  const [h, m, s] = val.split(":").map(Number);
+  return h + m / 60 + s / 3600;
+}
+function formatDuration(decimalHours: number): string {
+  const total = Math.round(decimalHours * 3600);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
 const manualEntrySchema = z.object({
-  hours: z.coerce.number().min(0.01, "Please enter a valid duration").max(24, "Maximum 24 hours allowed"),
+  hours: z.string()
+    .regex(hhmmssRegex, "Format must be hh:mm:ss")
+    .refine((v) => parseHHMMSS(v) > 0, "Duration must be greater than 0")
+    .refine((v) => parseHHMMSS(v) <= 24, "Maximum 24 hours allowed"),
   task_id: z.string().optional(),
   is_billable: z.boolean(),
 });
 
 const editEntrySchema = z.object({
-  duration_hours: z.coerce.number().min(0.01, "Please enter a valid duration").max(24, "Maximum 24 hours allowed"),
+  duration_hours: z.string()
+    .regex(hhmmssRegex, "Format must be hh:mm:ss")
+    .refine((v) => parseHHMMSS(v) > 0, "Duration must be greater than 0")
+    .refine((v) => parseHHMMSS(v) <= 24, "Maximum 24 hours allowed"),
   task_id: z.string().optional(),
   is_billable: z.boolean(),
 });
@@ -61,7 +80,7 @@ const TimeTracking = () => {
 
   const manualForm = useForm<ManualEntryValues>({
     resolver: zodResolver(manualEntrySchema),
-    defaultValues: { hours: 1, task_id: "none", is_billable: true },
+    defaultValues: { hours: "00:00:00", task_id: "none", is_billable: true },
   });
 
   const editForm = useForm<EditEntryValues>({
@@ -71,7 +90,7 @@ const TimeTracking = () => {
   useEffect(() => {
     if (editingLog) {
       editForm.reset({
-        duration_hours: editingLog.duration_hours,
+        duration_hours: formatDuration(editingLog.duration_hours || 0),
         task_id: editingLog.task_id || "none",
         is_billable: editingLog.is_billable,
       });
@@ -106,8 +125,9 @@ const TimeTracking = () => {
   // Also check assignee_ids array so that shared-task members beyond the first assignee still see the task.
   const myUserId = authUser?.id ?? currentUser?.user_id;
   const myTasks = tasks.filter((t: any) =>
-    t.assignee_id === myUserId ||
-    (Array.isArray(t.assignee_ids) && t.assignee_ids.includes(myUserId))
+    (t.assignee_id === myUserId ||
+    (Array.isArray(t.assignee_ids) && t.assignee_ids.includes(myUserId))) &&
+    t.status !== "InReview" && t.status !== "Done"
   );
 
   const todayHours = timeLogs
@@ -120,11 +140,7 @@ const TimeTracking = () => {
     ? timeLogs
     : timeLogs.filter((l) => taskFilter === "none" ? !l.task_id : l.task_id === taskFilter);
 
-  function formatHours(h: number) {
-    const hrs = Math.floor(h);
-    const mins = Math.round((h - hrs) * 60);
-    return `${hrs}h ${mins}m`;
-  }
+
 
   const logTimeMut = useMutation({
     mutationFn: (data: any) => api.post("/timelogs", data),
@@ -237,12 +253,13 @@ const TimeTracking = () => {
   }, []);
 
   const onManualSubmit = (values: ManualEntryValues) => {
+    const durationHours = parseHHMMSS(values.hours);
     logTimeMut.mutate({
       task_id: values.task_id === "none" ? null : values.task_id,
       user_id: currentUser?.user_id || "00000000-0000-0000-0000-000000000000",
-      start_time: new Date(Date.now() - values.hours * 3600000).toISOString(),
+      start_time: new Date(Date.now() - durationHours * 3600000).toISOString(),
       end_time: new Date().toISOString(),
-      duration_hours: values.hours,
+      duration_hours: durationHours,
       is_billable: values.is_billable,
       is_manual_entry: true,
       reason_manual: "Manual UI Entry",
@@ -253,6 +270,7 @@ const TimeTracking = () => {
     updateMut.mutate({
       ...editingLog,
       ...values,
+      duration_hours: parseHHMMSS(values.duration_hours),
       task_id: values.task_id === "none" ? null : values.task_id
     });
   };
@@ -291,11 +309,11 @@ const TimeTracking = () => {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-foreground">{isLoading ? "—" : formatHours(todayHours)}</p>
+            <p className="text-2xl font-bold font-mono text-foreground">{isLoading ? "—" : formatDuration(todayHours)}</p>
             <p className="text-xs text-muted-foreground mt-1">Today</p>
           </div>
           <div className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-foreground">{isLoading ? "—" : formatHours(weekHours)}</p>
+            <p className="text-2xl font-bold font-mono text-foreground">{isLoading ? "—" : formatDuration(weekHours)}</p>
             <p className="text-xs text-muted-foreground mt-1">Recent Entries</p>
           </div>
           <div className="glass-card p-4 text-center">
@@ -350,8 +368,8 @@ const TimeTracking = () => {
                         )} />
                         <FormField control={manualForm.control} name="hours" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Hours Spent</FormLabel>
-                            <FormControl><Input type="number" step={0.1} {...field} /></FormControl>
+                            <FormLabel>Duration (hh:mm:ss)</FormLabel>
+                            <FormControl><Input type="text" placeholder="00:30:00" maxLength={8} {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
                         )} />
@@ -402,8 +420,8 @@ const TimeTracking = () => {
                         <span className={cn("text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full", e.is_billable ? "bg-success/10 text-success" : "bg-muted text-muted-foreground")}>
                           {e.is_billable ? "Billable" : "Non-billable"}
                         </span>
-                        <span className="text-sm font-mono font-medium text-foreground min-w-[60px] text-right">
-                          {e.duration_hours ? `${Number(e.duration_hours).toFixed(1)}h` : "—"}
+                        <span className="text-sm font-mono font-medium text-foreground min-w-[80px] text-right">
+                          {e.duration_hours ? formatDuration(Number(e.duration_hours)) : "—"}
                         </span>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -446,8 +464,8 @@ const TimeTracking = () => {
                 )} />
                 <FormField control={editForm.control} name="duration_hours" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Hours Spent</FormLabel>
-                    <FormControl><Input type="number" step={0.1} {...field} /></FormControl>
+                    <FormLabel>Duration (hh:mm:ss)</FormLabel>
+                    <FormControl><Input type="text" placeholder="00:30:00" maxLength={8} {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />

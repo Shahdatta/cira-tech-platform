@@ -334,7 +334,7 @@ export const EmployeeDetailsSheet = ({ employee, open, onOpenChange }: EmployeeD
                           <p className="text-xs text-muted-foreground mt-0.5">{log.total_hours} hrs total</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-bold font-mono text-foreground">${log.total_amount?.toLocaleString()}</p>
+                          <p className="text-sm font-bold font-mono text-foreground">EGP {log.total_amount?.toLocaleString()}</p>
                           <span className={cn("text-[10px] font-semibold uppercase tracking-wider", log.status === "paid" ? "text-success" : "text-warning")}>
                             {log.status}
                           </span>
