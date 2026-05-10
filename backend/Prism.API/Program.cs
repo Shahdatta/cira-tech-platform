@@ -48,16 +48,21 @@ builder.Services.AddAuthorization(options =>
         .RequireAuthenticatedUser()
         .Build();
 
-    options.AddPolicy("AdminOnly", p => p.RequireRole("Admin"));
-    options.AddPolicy("AdminOrPM", p => p.RequireRole("Admin", "PM"));
-    options.AddPolicy("AdminOrHR", p => p.RequireRole("Admin", "HR"));
-    options.AddPolicy("AdminPMorHR", p => p.RequireRole("Admin", "PM", "HR"));
-    options.AddPolicy("NotGuest", p => p.RequireRole("Admin", "PM", "HR", "Member"));
+    options.AddPolicy("SuperAdminOnly", p => p.RequireRole("SuperAdmin"));
+    options.AddPolicy("HROrSuperAdmin", p => p.RequireRole("SuperAdmin", "HR"));
+    options.AddPolicy("AdminOnly",      p => p.RequireRole("SuperAdmin", "Admin"));
+    options.AddPolicy("AdminOrPM",      p => p.RequireRole("SuperAdmin", "Admin", "PM"));
+    options.AddPolicy("AdminOrHR",      p => p.RequireRole("SuperAdmin", "Admin", "HR"));
+    options.AddPolicy("AdminPMorHR",    p => p.RequireRole("SuperAdmin", "Admin", "PM", "HR"));
+    options.AddPolicy("NotGuest",       p => p.RequireRole("SuperAdmin", "Admin", "PM", "HR", "Member"));
 });
 
 // 4. Business Services
 builder.Services.AddScoped<IPayrollService, PayrollService>();
 builder.Services.AddSingleton<RateLimitService>();
+
+// 4b. Background Services
+builder.Services.AddHostedService<DeadlineNotificationService>();
 
 // 5. CORS Setup
 builder.Services.AddCors(options =>

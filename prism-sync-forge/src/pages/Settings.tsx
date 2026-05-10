@@ -20,6 +20,7 @@ const tabs = [
 ];
 
 const ROLE_COLORS: Record<string, string> = {
+  SuperAdmin: "bg-amber-500/15 text-amber-400 border-amber-500/30",
   Admin: "bg-red-500/15 text-red-400 border-red-500/30",
   PM: "bg-blue-500/15 text-blue-400 border-blue-500/30",
   HR: "bg-amber-500/15 text-amber-400 border-amber-500/30",
@@ -210,7 +211,7 @@ function ProfileTab({ me }: { me: any }) {
       </div>
 
       {/* Compensation (read-only for non-admin/HR) */}
-      {(me?.role === "Admin" || me?.role === "HR") && (
+      {(me?.role === "Admin" || me?.role === "HR" || me?.role === "SuperAdmin") && (
         <div className="rounded-xl border border-border p-4 space-y-3 bg-secondary/20">
           <h4 className="text-sm font-semibold text-foreground">Compensation</h4>
           <div className="grid grid-cols-2 gap-4 text-sm">

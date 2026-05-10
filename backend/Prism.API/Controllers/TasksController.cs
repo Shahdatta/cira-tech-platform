@@ -75,13 +75,24 @@ namespace Prism.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TaskDto>>> GetAllTasks()
+        public async Task<ActionResult<IEnumerable<TaskDto>>> GetAllTasks([FromQuery] Guid? projectId = null)
         {
             var roleString = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             Guid.TryParse(userIdString, out var userId);
 
             var query = _context.Tasks.Where(t => !t.IsDeleted);
+
+            // Filter by project: resolve Task → List → Folder → ProjectSpace chain
+            if (projectId.HasValue)
+            {
+                var projectListIds = await _context.Folders
+                    .Where(f => f.SpaceId == projectId.Value)
+                    .SelectMany(f => f.Lists)
+                    .Select(l => l.Id)
+                    .ToListAsync();
+                query = query.Where(t => projectListIds.Contains(t.ListId));
+            }
 
             if (roleString != "Admin" && roleString != "PM" && userId != Guid.Empty)
             {

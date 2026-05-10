@@ -49,10 +49,9 @@ export const TaskDetailsSheet = ({ task, open, onOpenChange }: TaskDetailsSheetP
   const [submitReport, setSubmitReport] = useState("");
   const [approveReport, setApproveReport] = useState("");
   const [rejectReport, setRejectReport] = useState("");
-  const { getCurrentUser } = useAuth();
-  const currentUser = getCurrentUser();
+  const { user: currentUser } = useAuth();
   const currentRole = currentUser?.role || "Member";
-  const canManage = currentRole === "Admin" || currentRole === "PM";
+  const canManage = currentRole === "Admin" || currentRole === "PM" || currentRole === "SuperAdmin";
 
   const form = useForm<EditTaskValues>({
     resolver: zodResolver(editTaskSchema),

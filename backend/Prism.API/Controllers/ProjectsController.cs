@@ -79,7 +79,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "AdminOrPM")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<ProjectSpaceDto>> CreateProjectSpace(ProjectSpaceDto spaceDto)
         {
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;

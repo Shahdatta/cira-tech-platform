@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Filter, Plus, CheckCircle, XCircle, ArrowRight, ChevronDown } from "lucide-react";
+import { Filter, Plus, CheckCircle, XCircle, ArrowRight, ChevronDown, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
@@ -67,18 +67,24 @@ const Tasks = () => {
   const [view, setView] = useState<"kanban" | "list">("kanban");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any | null>(null);
-  const [newTask, setNewTask] = useState({ title: "", description: "", status: "todo", list_id: "", assignee_ids: [] as string[] });
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
+  const [newTask, setNewTask] = useState({ title: "", description: "", status: "todo", list_id: "", assignee_ids: [] as string[], deadline: "" });
   const queryClient = useQueryClient();
   const { getCurrentUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const user = getCurrentUser();
   const role = user?.role || "Member";
-  const canManageTasks = role === "Admin" || role === "PM";
+  const canManageTasks = role === "Admin" || role === "PM" || role === "SuperAdmin";
   const currentUserId = user?.id;
 
   const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ["tasks_page"],
-    queryFn: () => api.get<any[]>("/tasks"),
+    queryKey: ["tasks_page", selectedProjectId],
+    queryFn: () => {
+      const url = selectedProjectId && selectedProjectId !== "all"
+        ? `/tasks?projectId=${selectedProjectId}`
+        : "/tasks";
+      return api.get<any[]>(url);
+    },
   });
 
   const { data: lists = [] } = useQuery({
@@ -115,7 +121,7 @@ const Tasks = () => {
       queryClient.invalidateQueries({ queryKey: ["tasks_page"] });
       toast.success("Task created successfully");
       setIsModalOpen(false);
-      setNewTask({ title: "", description: "", status: "todo", list_id: "", assignee_ids: [] });
+      setNewTask({ title: "", description: "", status: "todo", list_id: "", assignee_ids: [], deadline: "" });
     },
     onError: () => toast.error("Failed to create task"),
   });
@@ -131,6 +137,7 @@ const Tasks = () => {
       status: newTask.status,
       list_id: newTask.list_id,
       assignee_ids: newTask.assignee_ids,
+      due_date: newTask.deadline ? new Date(newTask.deadline).toISOString() : null,
     });
   };
 
@@ -196,7 +203,20 @@ const Tasks = () => {
               <button onClick={() => setView("kanban")} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${view === "kanban" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"}`}>Kanban</button>
               <button onClick={() => setView("list")} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${view === "list" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"}`}>List</button>
             </div>
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs"><Filter className="h-3 w-3" /> Filter</Button>
+            <div className="flex items-center gap-1.5">
+              <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                <SelectTrigger className="h-8 text-xs w-[170px] border-border">
+                  <SelectValue placeholder="All Projects" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Projects</SelectItem>
+                  {projects.map((proj: any) => (
+                    <SelectItem key={proj.id} value={proj.id}>{proj.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           {canManageTasks && (
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -278,6 +298,15 @@ const Tasks = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5"><CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />Deadline</Label>
+                  <Input
+                    type="datetime-local"
+                    value={newTask.deadline}
+                    onChange={(e) => setNewTask({ ...newTask, deadline: e.target.value })}
+                    className="cursor-pointer"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Description</Label>
@@ -374,7 +403,7 @@ const Tasks = () => {
                     );
                   })}
                   {canManageTasks && (
-                  <Button variant="ghost" className="w-full h-auto py-2 text-xs text-muted-foreground hover:text-foreground border border-dashed border-border rounded-xl hover:bg-secondary/50 transition-colors" onClick={() => { setNewTask({ ...newTask, status: col, list_id: "", assignee_ids: [] }); setIsModalOpen(true); }}>
+                  <Button variant="ghost" className="w-full h-auto py-2 text-xs text-muted-foreground hover:text-foreground border border-dashed border-border rounded-xl hover:bg-secondary/50 transition-colors" onClick={() => { setNewTask({ ...newTask, status: col, list_id: "", assignee_ids: [], deadline: "" }); setIsModalOpen(true); }}>
                     + Add task
                   </Button>
                   )}

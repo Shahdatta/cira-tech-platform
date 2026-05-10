@@ -5,6 +5,7 @@ namespace Prism.Domain.Entities
 {
     public enum AppRole
     {
+        SuperAdmin,
         Admin,
         PM,
         HR,

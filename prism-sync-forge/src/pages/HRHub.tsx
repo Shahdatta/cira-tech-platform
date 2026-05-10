@@ -22,14 +22,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ── schemas ──────────────────────────────────────────────────────────────────
+
 const createEmployeeSchema = z.object({
   full_name: z.string().min(3, "Name must be at least 3 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   phone: z.string().optional(),
-  role: z.enum(["Admin", "PM", "HR", "Member", "Guest"]),
+  role: z.enum(["SuperAdmin", "Admin", "PM", "HR", "Member", "Guest"]),
   hourly_rate: z.coerce.number().min(0, "Hourly rate must be 0 or more"),
   base_salary: z.coerce.number().min(0).optional(),
   contract_type: z.enum(["ft", "pt", "fl"]),
@@ -56,8 +58,9 @@ const contractColors: Record<string, string> = {
   pt: "bg-info/10 text-info",
   fl: "bg-warning/10 text-warning",
 };
-const roleLabels: Record<string, string> = { Admin: "Admin", PM: "PM", HR: "HR", Member: "Member", Guest: "Guest" };
+const roleLabels: Record<string, string> = { SuperAdmin: "Super Admin", Admin: "Admin", PM: "PM", HR: "HR", Member: "Member", Guest: "Guest" };
 const roleColors: Record<string, string> = {
+  SuperAdmin: "bg-amber-500/15 text-amber-400",
   Admin: "bg-red-500/10 text-red-500",
   PM: "bg-blue-500/10 text-blue-500",
   HR: "bg-purple-500/10 text-purple-500",
@@ -127,6 +130,8 @@ const employeeExportCols: ExportColumn[] = [
 const HRHub = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === "SuperAdmin" || currentUser?.role === "superadmin";
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
@@ -630,7 +635,12 @@ const HRHub = () => {
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                           <SelectContent>
-                            <SelectItem value="Admin">Admin</SelectItem>
+                            {isSuperAdmin && (
+                              <SelectItem value="SuperAdmin">⭐ Super Admin</SelectItem>
+                            )}
+                            {isSuperAdmin && (
+                              <SelectItem value="Admin">🔴 Admin</SelectItem>
+                            )}
                             <SelectItem value="PM">Project Manager</SelectItem>
                             <SelectItem value="HR">HR</SelectItem>
                             <SelectItem value="Member">Member</SelectItem>

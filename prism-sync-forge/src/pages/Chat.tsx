@@ -459,7 +459,7 @@ const Chat = () => {
                     <span className="text-xs text-slate-500">{currentProject.name}</span>
                   </>
                 )}
-                {currentChannel.is_private && (user?.role === "Admin" || user?.role === "PM") && (
+                {currentChannel.is_private && (user?.role === "Admin" || user?.role === "PM" || user?.role === "SuperAdmin") && (
                   <button
                     onClick={() => { setInviteSelected([]); setShowInviteDialog(true); }}
                     className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-white/10 transition-colors"

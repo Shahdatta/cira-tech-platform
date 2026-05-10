@@ -187,14 +187,20 @@ namespace Prism.API.Controllers
             return Ok(roles);
         }
 
-        // PUT /api/auth/role — admin changes a user's role
+        // PUT /api/auth/role — admin/superadmin changes a user's role
         [Authorize(Policy = "AdminOnly")]
         [HttpPut("role")]
         public async Task<IActionResult> ChangeRole(ChangeRoleDto dto)
         {
+            var callerRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
             // Validate the role string
             if (!Enum.TryParse<AppRole>(dto.Role, true, out var newRole))
-                return BadRequest(new { message = $"Invalid role '{dto.Role}'. Valid roles: Admin, PM, HR, Member, Guest" });
+                return BadRequest(new { message = $"Invalid role '{dto.Role}'. Valid roles: SuperAdmin, Admin, PM, HR, Member, Guest" });
+
+            // Only SuperAdmin can assign Admin or SuperAdmin roles
+            if ((newRole == AppRole.Admin || newRole == AppRole.SuperAdmin) && callerRole != "SuperAdmin")
+                return StatusCode(403, new { message = "Only a SuperAdmin can assign the Admin or SuperAdmin role." });
 
             // Find the user's existing role record
             var userRole = await _context.UserRoles

@@ -25,7 +25,7 @@ namespace Prism.API.Controllers
             score >= 90m ? 0.10m : score >= 75m ? 0.05m : 0m;
 
         [HttpGet]
-        [Authorize(Policy = "AdminPMorHR")]
+        [Authorize(Policy = "HROrSuperAdmin")]
         public async Task<ActionResult<IEnumerable<PayrollDto>>> GetPayrolls([FromQuery] Guid? userId)
         {
             var query = _context.Payrolls
@@ -57,7 +57,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "AdminPMorHR")]
+        [Authorize(Policy = "HROrSuperAdmin")]
         public async Task<ActionResult<PayrollDto>> GetPayroll(Guid id)
         {
             var p = await _context.Payrolls
@@ -74,7 +74,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpGet("summary")]
-        [Authorize(Policy = "AdminPMorHR")]
+        [Authorize(Policy = "HROrSuperAdmin")]
         public async Task<ActionResult<PayrollSummaryDto>> GetSummary()
         {
             var payrolls = await _context.Payrolls
@@ -101,7 +101,7 @@ namespace Prism.API.Controllers
         // GET /api/payrolls/preview?userId=...&periodStart=yyyy-MM-dd&periodEnd=yyyy-MM-dd
         // Returns hours actually logged in the period and estimated pay — used to auto-fill the Generate form
         [HttpGet("preview")]
-        [Authorize(Policy = "AdminPMorHR")]
+        [Authorize(Policy = "HROrSuperAdmin")]
         public async Task<ActionResult<PayrollPreviewDto>> Preview(
             [FromQuery] Guid userId,
             [FromQuery] DateTime periodStart,
@@ -156,7 +156,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "AdminPMorHR")]
+        [Authorize(Policy = "HROrSuperAdmin")]
         public async Task<ActionResult<PayrollDto>> CreatePayroll([FromBody] CreatePayrollDto dto)
         {
             var profile = await _context.Profiles
@@ -231,7 +231,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpPatch("{id}/status")]
-        [Authorize(Policy = "AdminPMorHR")]
+        [Authorize(Policy = "HROrSuperAdmin")]
         public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdatePayrollStatusDto dto)
         {
             var payroll = await _context.Payrolls.FindAsync(id);
@@ -297,7 +297,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "HROrSuperAdmin")]
         public async Task<IActionResult> DeletePayroll(Guid id)
         {
             var payroll = await _context.Payrolls.FindAsync(id);

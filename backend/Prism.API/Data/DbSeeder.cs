@@ -178,7 +178,7 @@ namespace Prism.API.Data
             // 1b. Seed User Roles
             var roles = new[]
             {
-                new UserRole { Id = Guid.NewGuid(), UserId = adminId,    Role = AppRole.Admin },
+                new UserRole { Id = Guid.NewGuid(), UserId = adminId,    Role = AppRole.SuperAdmin },
                 new UserRole { Id = Guid.NewGuid(), UserId = managerId,  Role = AppRole.Admin },
                 new UserRole { Id = Guid.NewGuid(), UserId = devId,      Role = AppRole.Member },
                 new UserRole { Id = Guid.NewGuid(), UserId = hrId,       Role = AppRole.HR },

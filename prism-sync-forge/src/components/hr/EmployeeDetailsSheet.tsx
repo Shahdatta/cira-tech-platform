@@ -42,8 +42,9 @@ const contractColors: Record<string, string> = {
   fl: "bg-warning/10 text-warning",
 };
 
-const roleLabels: Record<string, string> = { Admin: "Admin", PM: "Project Manager", HR: "HR", Member: "Member", Guest: "Guest" };
+const roleLabels: Record<string, string> = { SuperAdmin: "Super Admin", Admin: "Admin", PM: "Project Manager", HR: "HR", Member: "Member", Guest: "Guest" };
 const roleColors: Record<string, string> = {
+  SuperAdmin: "bg-amber-500/15 text-amber-400",
   Admin: "bg-red-500/10 text-red-500",
   PM: "bg-blue-500/10 text-blue-500",
   HR: "bg-purple-500/10 text-purple-500",
@@ -54,7 +55,8 @@ const roleColors: Record<string, string> = {
 export const EmployeeDetailsSheet = ({ employee, open, onOpenChange }: EmployeeDetailsSheetProps) => {
   const queryClient = useQueryClient();
   const { role: currentUserRole } = useRole();
-  const isAdmin = currentUserRole === "admin";
+  const isSuperAdmin = currentUserRole === "superadmin";
+  const isAdmin = isSuperAdmin || currentUserRole === "admin";
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>("Member");
 
@@ -223,7 +225,12 @@ export const EmployeeDetailsSheet = ({ employee, open, onOpenChange }: EmployeeD
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Admin">🔴 Admin</SelectItem>
+                          {isSuperAdmin && (
+                            <SelectItem value="SuperAdmin">⭐ Super Admin</SelectItem>
+                          )}
+                          {isSuperAdmin && (
+                            <SelectItem value="Admin">🔴 Admin</SelectItem>
+                          )}
                           <SelectItem value="PM">🔵 Project Manager</SelectItem>
                           <SelectItem value="HR">🟣 HR</SelectItem>
                           <SelectItem value="Member">🟢 Member</SelectItem>

@@ -101,7 +101,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "AdminPMorHR")]
+        [Authorize(Policy = "HROrSuperAdmin")]
         public async Task<ActionResult<ProfileDto>> CreateProfile(CreateProfileDto dto)
         {
             if (await _context.Profiles.AnyAsync(p => p.Email == dto.Email && !p.IsDeleted))
@@ -160,7 +160,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Policy = "AdminPMorHR")]
+        [Authorize(Policy = "HROrSuperAdmin")]
         public async Task<IActionResult> UpdateProfile(Guid id, CreateProfileDto dto)
         {
             var profile = await _context.Profiles.FindAsync(id);
@@ -189,7 +189,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "HROrSuperAdmin")]
         public async Task<IActionResult> DeleteProfile(Guid id)
         {
             var profile = await _context.Profiles.FindAsync(id);

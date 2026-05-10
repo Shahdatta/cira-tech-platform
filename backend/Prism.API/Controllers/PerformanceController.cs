@@ -21,6 +21,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = "HROrSuperAdmin")]
         public async Task<ActionResult<IEnumerable<PerformanceDto>>> GetAppraisals([FromQuery] Guid? userId)
         {
             var query = _context.PerformanceAppraisals
@@ -51,6 +52,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpGet("summary")]
+        [Authorize(Policy = "HROrSuperAdmin")]
         public async Task<IActionResult> GetSummary()
         {
             var profiles = await _context.Profiles
@@ -81,7 +83,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "AdminPMorHR")]
+        [Authorize(Policy = "HROrSuperAdmin")]
         public async Task<ActionResult<PerformanceDto>> CreateAppraisal([FromBody] CreatePerformanceDto dto)
         {
             var evaluatorIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -126,7 +128,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "HROrSuperAdmin")]
         public async Task<IActionResult> DeleteAppraisal(Guid id)
         {
             var appraisal = await _context.PerformanceAppraisals.FindAsync(id);

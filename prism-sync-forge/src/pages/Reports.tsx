@@ -21,7 +21,7 @@ import { useRole } from "@/contexts/RoleContext";
 
 const Reports = () => {
   const { role } = useRole();
-  const isAdmin = role === "admin";
+  const isAdmin = role === "admin" || role === "superadmin";
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
 
   const { data: dashData, isLoading: loadingDash } = useQuery({

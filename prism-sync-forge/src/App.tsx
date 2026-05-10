@@ -40,14 +40,14 @@ const App = () => (
           {/* Protected routes */}
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           <Route path="/spaces" element={<ProtectedRoute><Spaces /></ProtectedRoute>} />
-          <Route path="/spaces/new" element={<ProtectedRoute><RoleRoute allowedRoles={["admin","pm"]}><AddProject /></RoleRoute></ProtectedRoute>} />
+          <Route path="/spaces/new" element={<ProtectedRoute><RoleRoute allowedRoles={["superadmin","admin","pm"]}><AddProject /></RoleRoute></ProtectedRoute>} />
           <Route path="/spaces/:id" element={<ProtectedRoute><SpaceDetails /></ProtectedRoute>} />
-          <Route path="/tasks" element={<ProtectedRoute><RoleRoute allowedRoles={["admin","pm","member"]}><Tasks /></RoleRoute></ProtectedRoute>} />
-          <Route path="/time-tracking" element={<ProtectedRoute><RoleRoute allowedRoles={["admin","pm","hr","member"]}><TimeTracking /></RoleRoute></ProtectedRoute>} />
-          <Route path="/chat" element={<ProtectedRoute><RoleRoute allowedRoles={["admin","pm","hr","member","guest"]}><Chat /></RoleRoute></ProtectedRoute>} />
-          <Route path="/hr" element={<ProtectedRoute><RoleRoute allowedRoles={["admin","hr"]}><HRHub /></RoleRoute></ProtectedRoute>} />
-          <Route path="/invoices" element={<ProtectedRoute><RoleRoute allowedRoles={["admin","pm"]}><Invoices /></RoleRoute></ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute><RoleRoute allowedRoles={["admin","pm","hr"]}><Reports /></RoleRoute></ProtectedRoute>} />
+          <Route path="/tasks" element={<ProtectedRoute><RoleRoute allowedRoles={["superadmin","admin","pm","member"]}><Tasks /></RoleRoute></ProtectedRoute>} />
+          <Route path="/time-tracking" element={<ProtectedRoute><RoleRoute allowedRoles={["superadmin","admin","pm","hr","member"]}><TimeTracking /></RoleRoute></ProtectedRoute>} />
+          <Route path="/chat" element={<ProtectedRoute><RoleRoute allowedRoles={["superadmin","admin","pm","hr","member","guest"]}><Chat /></RoleRoute></ProtectedRoute>} />
+          <Route path="/hr" element={<ProtectedRoute><RoleRoute allowedRoles={["superadmin","hr"]}><HRHub /></RoleRoute></ProtectedRoute>} />
+          <Route path="/invoices" element={<ProtectedRoute><RoleRoute allowedRoles={["superadmin","admin","pm"]}><Invoices /></RoleRoute></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><RoleRoute allowedRoles={["superadmin","admin","pm","hr"]}><Reports /></RoleRoute></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -10,7 +10,7 @@ namespace Prism.API.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    [Authorize(Policy = "AdminOrPM")]
+    [Authorize(Policy = "NotGuest")]
     public class InvoicesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -37,6 +37,15 @@ namespace Prism.API.Controllers
             if (!string.IsNullOrEmpty(status) && Enum.TryParse<InvoiceStatus>(status, true, out var invoiceStatus))
                 query = query.Where(i => i.Status == invoiceStatus);
 
+            var roleString = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            Guid.TryParse(userIdString, out var userId);
+
+            if (roleString != "SuperAdmin" && roleString != "Admin")
+            {
+                query = query.Where(i => i.UserId == userId);
+            }
+
             var invoices = await query
                 .OrderByDescending(i => i.CreatedAt)
                 .ToListAsync();
@@ -54,10 +63,19 @@ namespace Prism.API.Controllers
                 .FirstOrDefaultAsync(i => i.Id == id);
 
             if (invoice == null) return NotFound();
+
+            var roleString = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            Guid.TryParse(userIdString, out var userId);
+
+            if (roleString != "SuperAdmin" && roleString != "Admin" && invoice.UserId != userId)
+                return Forbid();
+
             return Ok(MapToDto(invoice));
         }
 
         [HttpPost]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<InvoiceDto>> CreateInvoice([FromBody] CreateInvoiceDto dto)
         {
             if (!Enum.TryParse<InvoiceType>(dto.InvoiceType, true, out var invoiceType))
@@ -150,6 +168,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpPatch("{id}/status")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateInvoiceStatusDto dto)
         {
             var invoice = await _context.Invoices.FindAsync(id);
@@ -158,11 +177,11 @@ namespace Prism.API.Controllers
             if (!Enum.TryParse<InvoiceStatus>(dto.Status, true, out var invoiceStatus))
                 return BadRequest("Invalid status. Use: Draft, Sent, or Paid.");
 
-            // Only Admins may mark an invoice as Paid
+            // Only SuperAdmins may mark an invoice as Paid
             if (invoiceStatus == InvoiceStatus.Paid)
             {
                 var roleString = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-                if (roleString != "Admin")
+                if (roleString != "SuperAdmin")
                     return Forbid();
             }
 

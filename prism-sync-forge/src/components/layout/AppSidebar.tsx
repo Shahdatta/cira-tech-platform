@@ -39,13 +39,13 @@ import {
 
 type NavItem = { title: string; url: string; icon: typeof LayoutDashboard; roles: AppRole[] };
 
-const allRoles: AppRole[] = ["admin", "pm", "hr", "member", "guest"];
+const allRoles: AppRole[] = ["superadmin", "admin", "pm", "hr", "member", "guest"];
 
 const mainNav: NavItem[] = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: allRoles },
-  { title: "Spaces", url: "/spaces", icon: FolderKanban, roles: ["admin", "pm", "member"] },
-  { title: "Tasks", url: "/tasks", icon: CheckSquare, roles: ["admin", "pm", "member"] },
-  { title: "Time Tracking", url: "/time-tracking", icon: Clock, roles: ["admin", "pm", "hr", "member"] },
+  { title: "Spaces", url: "/spaces", icon: FolderKanban, roles: ["superadmin", "admin", "pm", "member"] },
+  { title: "Tasks", url: "/tasks", icon: CheckSquare, roles: ["superadmin", "admin", "pm", "member"] },
+  { title: "Time Tracking", url: "/time-tracking", icon: Clock, roles: ["superadmin", "admin", "pm", "hr", "member"] },
 ];
 
 const commsNav: NavItem[] = [
@@ -53,12 +53,13 @@ const commsNav: NavItem[] = [
 ];
 
 const hrNav: NavItem[] = [
-  { title: "HR Hub", url: "/hr", icon: Users, roles: ["admin", "hr"] },
-  { title: "Invoices", url: "/invoices", icon: FileText, roles: ["admin", "pm"] },
-  { title: "Reports", url: "/reports", icon: BarChart3, roles: ["admin", "pm", "hr"] },
+  { title: "HR Hub", url: "/hr", icon: Users, roles: ["superadmin", "admin", "hr"] },
+  { title: "Invoices", url: "/invoices", icon: FileText, roles: ["superadmin", "admin", "pm"] },
+  { title: "Reports", url: "/reports", icon: BarChart3, roles: ["superadmin", "admin", "pm", "hr"] },
 ];
 
 const roleLabels: Record<AppRole, string> = {
+  superadmin: "Super Admin",
   admin: "Admin",
   pm: "Project Manager",
   hr: "HR Manager",
@@ -67,6 +68,7 @@ const roleLabels: Record<AppRole, string> = {
 };
 
 const roleColors: Record<AppRole, string> = {
+  superadmin: "bg-amber-500/15 text-amber-400",
   admin: "bg-destructive/10 text-destructive",
   pm: "bg-primary/10 text-primary",
   hr: "bg-warning/10 text-warning",

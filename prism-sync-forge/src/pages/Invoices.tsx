@@ -113,7 +113,7 @@ const Invoices = () => {
   const { user }    = useAuth();
   const { role }    = useRole();
   const qc          = useQueryClient();
-  const canManage   = role === "admin" || role === "pm";
+  const canManage   = role === "admin" || role === "pm" || role === "superadmin";
 
   const [activeTab,     setActiveTab]     = useState("All");
   const [createOpen,    setCreateOpen]    = useState(false);
@@ -438,7 +438,7 @@ const Invoices = () => {
                           <Button variant="ghost" size="sm" className="h-6 text-[11px] px-2" onClick={() => setDetailInvoice(inv)} title="View">
                             <Eye className="h-3 w-3" />
                           </Button>
-                          {canManage && ns && (ns !== "Paid" || role === "admin") && (
+                          {canManage && ns && (ns !== "Paid" || role === "superadmin") && (
                             <Button variant="outline" size="sm" className="h-6 text-[11px] px-2"
                               onClick={() => statusMut.mutate({ id: inv.id, status: ns })}
                               disabled={statusMut.isPending}>
@@ -842,7 +842,7 @@ const Invoices = () => {
               {canManage && (
                 <div className="flex gap-2 pt-2">
                   {(nextStatus(detailInvoice.status) === "Sent" ||
-                    (role === "admin" && nextStatus(detailInvoice.status) === "Paid")) && (
+                    (role === "superadmin" && nextStatus(detailInvoice.status) === "Paid")) && (
                     <Button variant="outline"
                       onClick={() => statusMut.mutate({ id: detailInvoice.id, status: nextStatus(detailInvoice.status)! })}
                       disabled={statusMut.isPending}>

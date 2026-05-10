@@ -33,7 +33,7 @@ export function AppLayout({ children, title, subtitle }: AppLayoutProps) {
   const notifRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin = user?.role === "Admin" || user?.role === "PM";
+  const isAdmin = user?.role === "Admin" || user?.role === "PM" || user?.role === "SuperAdmin";
   const queryClient = useQueryClient();
 
   // ── Nav timer widget ────────────────────────────────────────────────────────

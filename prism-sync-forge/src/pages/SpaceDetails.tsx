@@ -2,7 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
-import { ArrowLeft, AlertCircle, CalendarClock, Clock, DollarSign, FolderKanban, Users, List as ListIcon, Loader2, MessageSquare, FileText, UploadCloud, Download, Trash2, X, Plus } from "lucide-react";
+import { ArrowLeft, AlertCircle, CalendarClock, Clock, DollarSign, FolderKanban, Users, List as ListIcon, Loader2, MessageSquare, FileText, UploadCloud, Download, Trash2, X, Plus, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,8 +39,8 @@ export default function SpaceDetails() {
 
   const { getCurrentUser } = useAuth();
   const currentUser = getCurrentUser();
-  const isAdmin = currentUser?.role?.toLowerCase() === "admin";
-  const isPMOrAdmin = ["admin", "pm"].includes(currentUser?.role?.toLowerCase() ?? "");
+  const isAdmin = currentUser?.role?.toLowerCase() === "admin" || currentUser?.role?.toLowerCase() === "superadmin";
+  const isPMOrAdmin = ["admin", "pm", "superadmin"].includes(currentUser?.role?.toLowerCase() ?? "");
 
   // Use the queries we already have
   const { data: spaces = [], isLoading: loadingSpaces } = useQuery({
@@ -118,7 +118,7 @@ export default function SpaceDetails() {
       description: newTask.description || null,
       status: newTask.status,
       list_id: newTask.list_id,
-      due_date: newTask.due_date || null,
+      due_date: newTask.due_date ? new Date(newTask.due_date).toISOString() : null,
       assignee_ids: newTask.assignee_ids,
     });
   };
@@ -518,12 +518,16 @@ export default function SpaceDetails() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="task-due">Due Date</Label>
+              <Label htmlFor="task-due" className="flex items-center gap-1.5">
+                <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
+                Deadline (Date &amp; Time)
+              </Label>
               <Input
                 id="task-due"
-                type="date"
+                type="datetime-local"
                 value={newTask.due_date}
                 onChange={(e) => setNewTask(p => ({ ...p, due_date: e.target.value }))}
+                className="cursor-pointer"
               />
             </div>
             <div className="space-y-1.5">

@@ -42,7 +42,7 @@ const Spaces = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { role } = useRole();
-  const canManage = role === "admin" || role === "pm";
+  const canManage = role === "admin" || role === "pm" || role === "superadmin";
   const [editingSpace, setEditingSpace] = useState<any | null>(null);
 
   const form = useForm<EditProjectValues>({

@@ -108,7 +108,7 @@ export function RoleDashboard() {
 
   if (!summary) return null;
 
-  const isAdmin = role === "admin";
+  const isAdmin = role === "admin" || role === "superadmin";
   const isPM = role === "pm";
   const isHR = role === "hr";
   const isMember = role === "member" || role === "guest";

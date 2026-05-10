@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
-export type AppRole = "admin" | "pm" | "hr" | "member" | "guest";
+export type AppRole = "superadmin" | "admin" | "pm" | "hr" | "member" | "guest";
 
 interface RoleContextType {
   role: AppRole;
@@ -18,7 +18,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user?.role) {
       const normalizedRole = user.role.toLowerCase() as AppRole;
-      const validRoles: AppRole[] = ["admin", "pm", "hr", "member", "guest"];
+      const validRoles: AppRole[] = ["superadmin", "admin", "pm", "hr", "member", "guest"];
       setRole(validRoles.includes(normalizedRole) ? normalizedRole : "member");
     } else {
       setRole("guest");
@@ -36,4 +36,14 @@ export function useRole() {
   const ctx = useContext(RoleContext);
   if (!ctx) throw new Error("useRole must be used within RoleProvider");
   return ctx;
+}
+
+/** Returns true if the role has Admin-level privileges or above */
+export function isAdminOrAbove(role: string | undefined | null): boolean {
+  return role === "superadmin" || role === "admin" || role === "SuperAdmin" || role === "Admin";
+}
+
+/** Returns true if the role has PM-level privileges or above */
+export function isPMOrAbove(role: string | undefined | null): boolean {
+  return isAdminOrAbove(role) || role === "pm" || role === "PM";
 }
