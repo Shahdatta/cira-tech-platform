@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,14 @@ const STATS = [
   { value: "100%", label: "Real-time" },
 ];
 
+const DEMO_ACCOUNTS = [
+  { label: "SuperAdmin", email: "admin@ciratech.com" },
+  { label: "Admin", email: "abdelrahman.hedar@ciratech.com" },
+  { label: "PM", email: "youssef.khalil@ciratech.com" },
+  { label: "HR", email: "fatima.omar@ciratech.com" },
+  { label: "Member", email: "ahmed.nabil@ciratech.com" },
+];
+
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -51,6 +59,11 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const quickFill = (demoEmail: string) => {
+    setEmail(demoEmail);
+    setPassword("password123");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,12 +230,21 @@ const Login = () => {
               )}
             </Button>
 
-            {/* <p className="auth-footer-text">
-              Don&apos;t have an account?{" "}
-              <Link to="/register" className="auth-link">
-                Create one
-              </Link>
-            </p> */}
+            {/* Demo credentials helper */}
+            <div className="auth-demo-box">
+              <div className="auth-demo-chips">
+                {DEMO_ACCOUNTS.map((a) => (
+                  <button
+                    key={a.email}
+                    type="button"
+                    className="auth-demo-chip"
+                    onClick={() => quickFill(a.email)}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </form>
 
           <p className="auth-copyright">© 2026 CIRA Tech. All rights reserved.</p>

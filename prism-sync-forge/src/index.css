@@ -601,4 +601,51 @@
   margin-top: 0.5rem;
 }
 
+/* ── Demo credentials box ── */
+.auth-demo-box {
+  margin-top: 0.25rem;
+  padding: 0.875rem 1rem;
+  border-radius: 12px;
+  background: rgba(45, 212, 168, 0.05);
+  border: 1px solid rgba(45, 212, 168, 0.12);
+}
 
+.auth-demo-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 0.6rem;
+  letter-spacing: 0.02em;
+}
+
+.auth-demo-pw {
+  font-weight: 400;
+  color: #2dd4a8;
+  margin-left: 0.25rem;
+}
+
+.auth-demo-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.auth-demo-chip {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  letter-spacing: 0.03em;
+}
+
+.auth-demo-chip:hover {
+  background: rgba(45, 212, 168, 0.12);
+  border-color: rgba(45, 212, 168, 0.35);
+  color: #2dd4a8;
+  transform: translateY(-1px);
+}

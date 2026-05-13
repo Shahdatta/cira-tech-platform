@@ -75,7 +75,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOrPM")]
         public async Task<ActionResult<InvoiceDto>> CreateInvoice([FromBody] CreateInvoiceDto dto)
         {
             if (!Enum.TryParse<InvoiceType>(dto.InvoiceType, true, out var invoiceType))
@@ -283,7 +283,7 @@ namespace Prism.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOrPM")]
         public async Task<IActionResult> DeleteInvoice(Guid id)
         {
             var invoice = await _context.Invoices
