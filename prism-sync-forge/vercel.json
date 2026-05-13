@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "http://cira-pm.runasp.net/api/:path*"
+    }
+  ]
+}
