@@ -53,7 +53,7 @@ const commsNav: NavItem[] = [
 ];
 
 const hrNav: NavItem[] = [
-  { title: "HR Hub", url: "/hr", icon: Users, roles: ["superadmin", "admin", "hr"] },
+  { title: "HR Hub", url: "/hr", icon: Users, roles: ["superadmin", "hr"] },
   { title: "Invoices", url: "/invoices", icon: FileText, roles: ["superadmin", "admin", "pm"] },
   { title: "Reports", url: "/reports", icon: BarChart3, roles: ["superadmin", "admin", "pm", "hr"] },
 ];

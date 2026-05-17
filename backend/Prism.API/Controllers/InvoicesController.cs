@@ -130,33 +130,7 @@ namespace Prism.API.Controllers
             _context.Invoices.Add(invoice);
             await _context.SaveChangesAsync();
 
-            // Notify all Admins about the newly created invoice
-            var creatorName = await _context.Profiles
-                .Where(p => p.Id == dto.UserId)
-                .Select(p => p.FullName)
-                .FirstOrDefaultAsync() ?? "Someone";
-
-            var adminIds = await _context.UserRoles
-                .Where(r => r.Role == AppRole.Admin)
-                .Select(r => r.UserId)
-                .ToListAsync();
-
-            if (adminIds.Any())
-            {
-                var notifs = adminIds.Select(adminId => new Notification
-                {
-                    Id        = Guid.NewGuid(),
-                    UserId    = adminId,
-                    Title     = "New Invoice Created",
-                    Message   = $"{creatorName} created {autoNumber} ({dto.InvoiceType}) — {dto.RecipientName ?? "N/A"} · Total: ${totalAmount:F2}",
-                    Type      = "Info",
-                    IsRead    = false,
-                    CreatedAt = DateTime.UtcNow
-                }).ToList();
-
-                await _context.Notifications.AddRangeAsync(notifs);
-                await _context.SaveChangesAsync();
-            }
+            // (Removed notification broadcast to all admins on invoice creation to reduce noise)
 
             var created = await _context.Invoices
                 .Include(i => i.Profile)

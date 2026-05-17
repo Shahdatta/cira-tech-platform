@@ -311,15 +311,19 @@ namespace Prism.API.Controllers
 
             await _context.SaveChangesAsync();
 
-            // Notify all Admins and PMs
-            var adminPmIds = await _context.UserRoles
-                .Where(r => r.Role == AppRole.Admin || r.Role == AppRole.PM)
-                .Select(r => r.UserId).Distinct().ToListAsync();
-            if (adminPmIds.Count > 0)
-                await NotifyUsersAsync(adminPmIds,
+            // Notify the Project Manager
+            var managerId = await _context.Tasks
+                .Where(t => t.Id == id)
+                .Select(t => t.List.Folder.ProjectSpace.ManagerId)
+                .FirstOrDefaultAsync();
+
+            if (managerId.HasValue && managerId.Value != Guid.Empty)
+            {
+                await NotifyUsersAsync(new[] { managerId.Value },
                     "Review Requested",
                     $"Task '{task.Title}' has been submitted for review.",
                     "TaskInReview", id);
+            }
             return Ok(new { message = "Task submitted for review." });
         }
 

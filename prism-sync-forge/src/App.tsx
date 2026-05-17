@@ -40,7 +40,7 @@ const App = () => (
           {/* Protected routes */}
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           <Route path="/spaces" element={<ProtectedRoute><Spaces /></ProtectedRoute>} />
-          <Route path="/spaces/new" element={<ProtectedRoute><RoleRoute allowedRoles={["superadmin","admin","pm"]}><AddProject /></RoleRoute></ProtectedRoute>} />
+          <Route path="/spaces/new" element={<ProtectedRoute><RoleRoute allowedRoles={["superadmin","admin"]}><AddProject /></RoleRoute></ProtectedRoute>} />
           <Route path="/spaces/:id" element={<ProtectedRoute><SpaceDetails /></ProtectedRoute>} />
           <Route path="/tasks" element={<ProtectedRoute><RoleRoute allowedRoles={["superadmin","admin","pm","member"]}><Tasks /></RoleRoute></ProtectedRoute>} />
           <Route path="/time-tracking" element={<ProtectedRoute><RoleRoute allowedRoles={["superadmin","admin","pm","hr","member"]}><TimeTracking /></RoleRoute></ProtectedRoute>} />
